@@ -12,40 +12,56 @@ const extension: JupyterFrontEndPlugin<void> = {
   requires: [INotebookTracker],
   activate: (app: JupyterFrontEnd, tracker: INotebookTracker) => {
     let currentRatingWidget: RatingWidget | null = null;
+    console.log("test if the hot reload works??OKOK");
 
-    const updateButton = () => {
-      // Remove all existing rate buttons
-      document.querySelectorAll(".rate-button").forEach((button) => {
-        button.remove();
+    const createPopup = (event: MouseEvent, cellContent: string) => {
+      // Remove existing popups
+      document.querySelectorAll(".text-select-popup").forEach((popup) => {
+        popup.remove();
       });
 
-      // Add rate button to the active cell
-      const cell = tracker.activeCell;
-      if (cell && cell.model.type === "code") {
-        const button = document.createElement("button");
-        button.innerText = "Rate";
-        button.className = "rate-button";
-        button.addEventListener("click", () => {
-          const codeCellModel = cell.model as CodeCellModel;
-          console.log(codeCellModel);
-          const cellContent = codeCellModel.sharedModel.source;
-          if (!currentRatingWidget) {
-            currentRatingWidget = new RatingWidget(cellContent);
-            app.shell.add(currentRatingWidget, "right");
-          } else {
-            currentRatingWidget.updateContent(cellContent);
-          }
-          app.shell.activateById(currentRatingWidget.id);
-        });
-        cell.node.appendChild(button);
-      }
+      // Create a new popup
+      const popup = document.createElement("div");
+      popup.className = "text-select-popup";
+      popup.style.position = "fixed";
+      popup.style.top = `${event.clientY}px`;
+      popup.style.left = `${event.clientX}px`;
+      popup.style.backgroundColor = "#f0f0f0";
+      popup.style.border = "1px solid #ccc";
+      popup.style.padding = "5px";
+      popup.style.zIndex = "1000"; // Ensure popup is above other elements
+
+      // Add a button or other UI elements to the popup
+      const button = document.createElement("button");
+      button.innerText = "Rate";
+      button.addEventListener("click", () => {
+        if (!currentRatingWidget) {
+          currentRatingWidget = new RatingWidget(cellContent);
+          app.shell.add(currentRatingWidget, "right");
+        } else {
+          currentRatingWidget.updateContent(cellContent);
+        }
+        app.shell.activateById(currentRatingWidget.id);
+        popup.remove(); // Remove the popup when button is clicked
+      });
+      popup.appendChild(button);
+
+      // Add the popup to the document body
+      document.body.appendChild(popup);
     };
 
-    // Update the rate button whenever the active cell changes
-    tracker.activeCellChanged.connect(updateButton);
-
-    // Initial button setup
-    updateButton();
+    // Event listener for text selection
+    document.addEventListener("mouseup", (event) => {
+      const cell = tracker.activeCell;
+      if (cell && cell.model.type === "code") {
+        const selectedText = document.getSelection()?.toString();
+        if (selectedText) {
+          const codeCellModel = cell.model as CodeCellModel;
+          const cellContent = codeCellModel.sharedModel.source;
+          createPopup(event, cellContent);
+        }
+      }
+    });
   },
 };
 
