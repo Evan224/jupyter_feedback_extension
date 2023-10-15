@@ -5,7 +5,7 @@
     "declaration": true,
     "esModuleInterop": true,
     "incremental": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "module": "esnext",
     "moduleResolution": "node",
     "noEmitOnError": true,
@@ -17,9 +17,19 @@
     "rootDir": "src",
     "strict": true,
     "strictNullChecks": true,
-    "target": "ES2018"
+    "target": "ES2018",
+    "types": [
+      "node",
+      "jest",
+      "webpack-env"
+    ]
   },
   "include": [
-    "src/*"
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts",
+    "**/*.test.ts"
   ]
 }

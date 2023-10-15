@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 
 export const RatingComponentJSX = (props: { cellContent: string }): JSX.Element => {
