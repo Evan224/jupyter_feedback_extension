@@ -69,10 +69,10 @@ const extension: JupyterFrontEndPlugin<void> = {
   },
 };
 
-function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string,app: JupyterFrontEnd) {
+function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string, app: JupyterFrontEnd) {
   // Create a tooltip element
   if (document.getElementById('my-tooltip')) {
-    return;
+      return;
   }
   const tooltip = document.createElement('div');
   tooltip.id = 'my-tooltip';
@@ -97,35 +97,29 @@ function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string,
   tooltip.appendChild(reactDiv);
 
   document.body.appendChild(tooltip);
-  // const contentDomRect = contentDom.getBoundingClientRect();
 
   if (cellType === 'code' || (cellType === 'markdown' && codeMirrorEditor?.editor)) {
-    // const contentDom = codeMirrorEditor?.editor.dom;
-    // const contentDomRect =codeMirrorEditor?.editor.contentDOM.getBoundingClientRect();
-    tooltip.style.left = event.clientX + 'px';
-    tooltip.style.top = event.clientY + 'px';
+      tooltip.style.left = event.clientX + 'px';
+      tooltip.style.top = event.clientY + 'px';
   } else {
-    // For rendered Markdown cells
-    tooltip.style.left = event.clientX + 'px';
-    tooltip.style.top = event.clientY + 'px';
+      // For rendered Markdown cells
+      tooltip.style.left = event.clientX + 'px';
+      tooltip.style.top = event.clientY + 'px';
   }
 
   // Handle tooltip dismissal
-  // TODO: the tooltiip is not dismissed when clicking on the notebook
   const onClickOutside = (e: MouseEvent) => {
-    const notebookElement = document.querySelector('.jp-Notebook');
-    if (!tooltip.contains(e.target as Node) && (!notebookElement || !notebookElement.contains(e.target as Node))) {
-      tooltip.remove();
-      document.removeEventListener('mousedown', onClickOutside);
-    }
+      if (!tooltip.contains(e.target as Node)) {
+          tooltip.remove();
+          document.removeEventListener('mousedown', onClickOutside);
+      }
   };
-  
 
   document.addEventListener('mousedown', onClickOutside);
   reactDiv.addEventListener('click', () => {
-    createIconClickHandler(app, reactIcon, MyReactWidget)();
+      createIconClickHandler(app, reactIcon, MyReactWidget)();
   });
-  
 }
+
 
 export default extension;
