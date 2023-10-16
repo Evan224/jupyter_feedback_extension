@@ -17,13 +17,10 @@ class MyReactWidget extends ReactWidget {
   }
 }
 
-
-
 function createIconClickHandler(app: JupyterFrontEnd, icon: any, ReactComponent: any) {
   return () => {
     const widgetId = `widget-${icon.name}`;
     const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
-    console.log(Array.from(app.shell.widgets("right")),'lets see what we have ')
 
     if (existingWidget) {
       // If the widget already exists, activate it
@@ -64,7 +61,6 @@ const extension: JupyterFrontEndPlugin<void> = {
       }
     });
     notebookTracker.activeCellChanged.connect(() => {
-      console.log('---------------')
       const tooltip = document.getElementById('my-tooltip');
       if (tooltip) {
         tooltip.remove();
