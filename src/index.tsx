@@ -18,10 +18,12 @@ class MyReactWidget extends ReactWidget {
 }
 
 
+
 function createIconClickHandler(app: JupyterFrontEnd, icon: any, ReactComponent: any) {
   return () => {
     const widgetId = `widget-${icon.name}`;
-    const existingWidget = Array.from(app.shell.widgets()).find(widget => (widget as any)?.id === widgetId);
+    const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
+    console.log(Array.from(app.shell.widgets("right")),'lets see what we have ')
 
     if (existingWidget) {
       // If the widget already exists, activate it
@@ -59,6 +61,13 @@ const extension: JupyterFrontEndPlugin<void> = {
         if (selectedText && selectedText.trim() !== "") {
           showTooltip(event, codeMirrorEditor, "markdown",app);
         }
+      }
+    });
+    notebookTracker.activeCellChanged.connect(() => {
+      console.log('---------------')
+      const tooltip = document.getElementById('my-tooltip');
+      if (tooltip) {
+        tooltip.remove();
       }
     });
   },
@@ -106,22 +115,17 @@ function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string,
   }
 
   // Handle tooltip dismissal
+  // TODO: the tooltiip is not dismissed when clicking on the notebook
   const onClickOutside = (e: MouseEvent) => {
-    if (!tooltip.contains(e.target as Node)) {
+    const notebookElement = document.querySelector('.jp-Notebook');
+    if (!tooltip.contains(e.target as Node) && (!notebookElement || !notebookElement.contains(e.target as Node))) {
       tooltip.remove();
       document.removeEventListener('mousedown', onClickOutside);
-      tooltip.removeEventListener('blur', onBlur);
     }
   };
-
-  const onBlur = () => {
-    tooltip.remove();
-    document.removeEventListener('mousedown', onClickOutside);
-    tooltip.removeEventListener('blur', onBlur);
-  };
+  
 
   document.addEventListener('mousedown', onClickOutside);
-  tooltip.addEventListener('blur', onBlur);
   reactDiv.addEventListener('click', () => {
     createIconClickHandler(app, reactIcon, MyReactWidget)();
   });
