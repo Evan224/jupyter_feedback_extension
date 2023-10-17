@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Picker from 'emoji-picker-react';
+import { ReactWidget } from '@jupyterlab/ui-components';
 
 function CommentBox({ onSubmit: onSubmit }: { onSubmit: (comment: string) => void }) {
   const [comment, setComment] = useState('');
@@ -34,4 +35,18 @@ function CommentBox({ onSubmit: onSubmit }: { onSubmit: (comment: string) => voi
   );
 }
 
-export default CommentBox;
+class CommentBoxWidget extends ReactWidget {
+    onSubmit: (comment: string) => void;
+  
+    constructor(onSubmit: (comment: string) => void) {
+      super();
+      this.onSubmit = onSubmit;
+    }
+  
+    render() {
+      return <CommentBox onSubmit={this.onSubmit} />;
+    }
+  }
+  
+
+export default CommentBoxWidget;

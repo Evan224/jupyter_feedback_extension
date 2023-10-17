@@ -5,6 +5,9 @@ import {
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { reactIcon, addIcon, closeIcon, notebookIcon } from '@jupyterlab/ui-components';
 import { ReactWidget } from '@jupyterlab/apputils';
+import CommentBoxWidget from './components/CommentBox';
+import QuestionnaireWidget from './components/QuestionaireWidget';
+import ChatBotWidget from './components/ChatBoxWidget';
 
 function MyReactComponent() {
   return <div>This is my React component!</div>;
@@ -36,6 +39,72 @@ function createIconClickHandler(app: JupyterFrontEnd, icon: any, ReactComponent:
     }
   };
 }
+
+function showCommentBox(app: JupyterFrontEnd) {
+  return () => {
+    const widgetId = 'comment-box-widget';
+    const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
+
+    if (existingWidget) {
+      // If the widget already exists, activate it
+      app.shell.activateById(widgetId);
+    } else {
+      // If the widget doesn't exist, create a new one and add it to the shell
+      const widget = new CommentBoxWidget((comment: string) => {
+        console.log("Comment submitted:", comment);
+        // Here you can handle the submitted comment, e.g., send it to a backend
+      });
+      widget.id = widgetId;
+      widget.title.label = "Add Comment";
+      widget.title.closable = true;
+      app.shell.add(widget, 'right');
+      app.shell.activateById(widget.id);
+    }
+  };
+}
+
+function showQuestionnaire(app: JupyterFrontEnd) {
+  return () => {
+    const widgetId = 'questionnaire-widget';
+    const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
+
+    if (existingWidget) {
+      app.shell.activateById(widgetId);
+    } else {
+      const widget = new QuestionnaireWidget((answers: string[]) => {
+        console.log("Questionnaire answers:", answers);
+        // Handle the answers as needed
+      });
+      widget.id = widgetId;
+      widget.title.label = "Questionnaire";
+      widget.title.closable = true;
+      app.shell.add(widget, 'right');
+      app.shell.activateById(widget.id);
+    }
+  };
+}
+
+function showChatBot(app: JupyterFrontEnd) {
+  return () => {
+    const widgetId = 'chatbot-widget';
+    const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
+
+    if (existingWidget) {
+      app.shell.activateById(widgetId);
+    } else {
+      const widget = new ChatBotWidget((message: string) => {
+        console.log("User message:", message);
+        // Here you can handle the user's message, e.g., send it to a backend or generate a response
+      });
+      widget.id = widgetId;
+      widget.title.label = "ChatBot";
+      widget.title.closable = true;
+      app.shell.add(widget, 'right');
+      app.shell.activateById(widget.id);
+    }
+  };
+}
+
 
 
 const extension: JupyterFrontEndPlugin<void> = {
@@ -115,9 +184,32 @@ function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string,
       }
   };
 
+  add.addEventListener('click', () => {
+    console.log("Add clicked")
+    const tooltip = document.getElementById('my-tooltip');
+    if (tooltip) {
+      tooltip.remove();
+    }
+    showCommentBox(app)();
+  });
+
   document.addEventListener('mousedown', onClickOutside);
   reactDiv.addEventListener('click', () => {
       createIconClickHandler(app, reactIcon, MyReactWidget)();
+  });
+  notebook.addEventListener('click', () => {
+    const tooltip = document.getElementById('my-tooltip');
+    if (tooltip) {
+      tooltip.remove();
+    }
+    showQuestionnaire(app)();
+  });
+  close.addEventListener('click', () => {
+    const tooltip = document.getElementById('my-tooltip');
+    if (tooltip) {
+      tooltip.remove();
+    }
+    showChatBot(app)();
   });
 }
 
