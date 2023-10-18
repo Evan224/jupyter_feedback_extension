@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 
@@ -6,9 +6,15 @@ function CommentBox({ onSubmit: onSubmit }: { onSubmit: (comment: string) => voi
   const [comment, setComment] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  const handleEmojiClick = (event:any, emojiObject:any) => {
+  const handleEmojiClick = (emojiObject:any) => {
+    console.log(emojiObject);  // Log the emojiObject
     setComment(prevComment => prevComment + emojiObject.emoji);
   };
+  
+
+  useEffect(() => {
+    console.log('comment changed', comment)
+  }, [comment]);
 
   const handleSubmit = () => {
     if (comment.trim()) {
