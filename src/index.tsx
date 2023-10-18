@@ -9,6 +9,41 @@ import CommentBoxWidget from './components/CommentBox';
 import QuestionnaireWidget from './components/QuestionaireWidget';
 import ChatBotWidget from './components/ChatBoxWidget';
 
+const WIDGET_IDS = {
+  COMMENT_BOX: 'comment-box-widget',
+  QUESTIONNAIRE: 'questionnaire-widget',
+  CHATBOT: 'chatbot-widget',
+  MY_REACT: 'my-react-widget',
+};
+
+function createOrActivateWidget(app: JupyterFrontEnd, widgetId: string, ReactComponent: any,widgetIcon:any) {
+  const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
+
+  if (existingWidget) {
+    app.shell.activateById(widgetId);
+  } else {
+    const widget = new ReactComponent();
+    widget.id = widgetId;
+    widget.title.icon = widgetIcon;
+    widget.title.closable = true;
+    app.shell.add(widget, 'right');
+    app.shell.activateById(widget.id);
+  }
+}
+
+function handleTooltipClicks(event: MouseEvent, app: JupyterFrontEnd) {
+  const target = event.target as HTMLElement;
+  if (target.matches('#add-icon')) {
+    createOrActivateWidget(app, WIDGET_IDS.COMMENT_BOX, CommentBoxWidget,addIcon);
+  } else if (target.matches('#react-icon')) {
+    createOrActivateWidget(app, WIDGET_IDS.MY_REACT, MyReactWidget,reactIcon);
+  } else if (target.matches('#notebook-icon')) {
+    createOrActivateWidget(app, WIDGET_IDS.QUESTIONNAIRE, QuestionnaireWidget,notebookIcon);
+  } else if (target.matches('#close-icon')) {
+    createOrActivateWidget(app, WIDGET_IDS.CHATBOT, ChatBotWidget,closeIcon);
+  }
+}
+
 function MyReactComponent() {
   return <div>This is my React component!</div>;
 }
@@ -19,93 +54,6 @@ class MyReactWidget extends ReactWidget {
     return <MyReactComponent />;
   }
 }
-
-function createIconClickHandler(app: JupyterFrontEnd, icon: any, ReactComponent: any) {
-  return () => {
-    const widgetId = `widget-${icon.name}`;
-    const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
-
-    if (existingWidget) {
-      // If the widget already exists, activate it
-      app.shell.activateById(widgetId);
-    } else {
-      // If the widget doesn't exist, create a new one and add it to the shell
-      const widget = new ReactComponent();
-      widget.id = widgetId;
-      widget.title.icon = icon;
-      widget.title.closable = true;
-      app.shell.add(widget, 'right');
-      app.shell.activateById(widget.id);  // Activate (or select) the widget
-    }
-  };
-}
-
-function showCommentBox(app: JupyterFrontEnd) {
-  return () => {
-    const widgetId = 'comment-box-widget';
-    const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
-
-    if (existingWidget) {
-      // If the widget already exists, activate it
-      app.shell.activateById(widgetId);
-    } else {
-      // If the widget doesn't exist, create a new one and add it to the shell
-      const widget = new CommentBoxWidget((comment: string) => {
-        console.log("Comment submitted:", comment);
-        // Here you can handle the submitted comment, e.g., send it to a backend
-      });
-      widget.id = widgetId;
-      widget.title.label = "Add Comment";
-      widget.title.closable = true;
-      app.shell.add(widget, 'right');
-      app.shell.activateById(widget.id);
-    }
-  };
-}
-
-function showQuestionnaire(app: JupyterFrontEnd) {
-  return () => {
-    const widgetId = 'questionnaire-widget';
-    const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
-
-    if (existingWidget) {
-      app.shell.activateById(widgetId);
-    } else {
-      const widget = new QuestionnaireWidget((answers: string[]) => {
-        console.log("Questionnaire answers:", answers);
-        // Handle the answers as needed
-      });
-      widget.id = widgetId;
-      widget.title.label = "Questionnaire";
-      widget.title.closable = true;
-      app.shell.add(widget, 'right');
-      app.shell.activateById(widget.id);
-    }
-  };
-}
-
-function showChatBot(app: JupyterFrontEnd) {
-  return () => {
-    const widgetId = 'chatbot-widget';
-    const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
-
-    if (existingWidget) {
-      app.shell.activateById(widgetId);
-    } else {
-      const widget = new ChatBotWidget((message: string) => {
-        console.log("User message:", message);
-        // Here you can handle the user's message, e.g., send it to a backend or generate a response
-      });
-      widget.id = widgetId;
-      widget.title.label = "ChatBot";
-      widget.title.closable = true;
-      app.shell.add(widget, 'right');
-      app.shell.activateById(widget.id);
-    }
-  };
-}
-
-
 
 const extension: JupyterFrontEndPlugin<void> = {
   id: 'my-extension',
@@ -128,6 +76,10 @@ const extension: JupyterFrontEndPlugin<void> = {
           showTooltip(event, codeMirrorEditor, "markdown",app);
         }
       }
+      const tooltip = document.getElementById('my-tooltip');
+      if (tooltip) {
+        tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app));
+      }
     });
     notebookTracker.activeCellChanged.connect(() => {
       const tooltip = document.getElementById('my-tooltip');
@@ -138,11 +90,20 @@ const extension: JupyterFrontEndPlugin<void> = {
   },
 };
 
+function createTooltipIcon(icon: any, id: string): HTMLElement {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(icon.svgstr, 'image/svg+xml');
+  const svgElement = doc.firstChild as HTMLElement;
+  svgElement.id = id;
+  return svgElement;
+}
+
+
 function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string, app: JupyterFrontEnd) {
-  // Create a tooltip element
   if (document.getElementById('my-tooltip')) {
-      return;
+    return;
   }
+
   const tooltip = document.createElement('div');
   tooltip.id = 'my-tooltip';
   tooltip.style.position = 'absolute';
@@ -151,67 +112,28 @@ function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string,
   tooltip.style.padding = '5px';
   tooltip.style.zIndex = '1000';
 
-  // Append tooltip to the editor's content DOM
-  const add = document.createElement('div');
-  add.innerHTML = addIcon.svgstr;
-  tooltip.appendChild(add);
-  const close = document.createElement('div');
-  close.innerHTML = closeIcon.svgstr;
-  tooltip.appendChild(close);
-  const notebook = document.createElement('div');
-  notebook.innerHTML = notebookIcon.svgstr;
-  tooltip.appendChild(notebook);
-  const reactDiv = document.createElement('div');
-  reactDiv.innerHTML = reactIcon.svgstr;
-  tooltip.appendChild(reactDiv);
+  // Append tooltip icons
+  tooltip.appendChild(createTooltipIcon(addIcon, 'add-icon'));
+  tooltip.appendChild(createTooltipIcon(closeIcon, 'close-icon'));
+  tooltip.appendChild(createTooltipIcon(notebookIcon, 'notebook-icon'));
+  tooltip.appendChild(createTooltipIcon(reactIcon, 'react-icon'));
+
+  // Add event listener for tooltip clicks
+  tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app));
 
   document.body.appendChild(tooltip);
-
-  if (cellType === 'code' || (cellType === 'markdown' && codeMirrorEditor?.editor)) {
-      tooltip.style.left = event.clientX + 'px';
-      tooltip.style.top = event.clientY + 'px';
-  } else {
-      // For rendered Markdown cells
-      tooltip.style.left = event.clientX + 'px';
-      tooltip.style.top = event.clientY + 'px';
-  }
+  tooltip.style.left = `${event.clientX}px`;
+  tooltip.style.top = `${event.clientY}px`;
 
   // Handle tooltip dismissal
   const onClickOutside = (e: MouseEvent) => {
-      if (!tooltip.contains(e.target as Node)) {
-          tooltip.remove();
-          document.removeEventListener('mousedown', onClickOutside);
-      }
+    if (!tooltip.contains(e.target as Node)) {
+      tooltip.remove();
+      document.removeEventListener('mousedown', onClickOutside);
+    }
   };
 
-  add.addEventListener('click', () => {
-    console.log("Add clicked")
-    const tooltip = document.getElementById('my-tooltip');
-    if (tooltip) {
-      tooltip.remove();
-    }
-    showCommentBox(app)();
-  });
-
   document.addEventListener('mousedown', onClickOutside);
-  reactDiv.addEventListener('click', () => {
-      createIconClickHandler(app, reactIcon, MyReactWidget)();
-  });
-  notebook.addEventListener('click', () => {
-    const tooltip = document.getElementById('my-tooltip');
-    if (tooltip) {
-      tooltip.remove();
-    }
-    showQuestionnaire(app)();
-  });
-  close.addEventListener('click', () => {
-    const tooltip = document.getElementById('my-tooltip');
-    if (tooltip) {
-      tooltip.remove();
-    }
-    showChatBot(app)();
-  });
 }
-
 
 export default extension;
