@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 
-function CommentBox({ onSubmit: onSubmit }: { onSubmit: (comment: string) => void }) {
+function CommentBox(codeMirrorEditor:any) {
   const [comment, setComment] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -12,14 +12,10 @@ function CommentBox({ onSubmit: onSubmit }: { onSubmit: (comment: string) => voi
   };
   
 
-  useEffect(() => {
-    console.log('comment changed', comment)
-  }, [comment]);
-
   const handleSubmit = () => {
     if (comment.trim()) {
-      onSubmit(comment);
-      setComment('');
+      // setComment('');
+      console.log(codeMirrorEditor)
     }
   };
 
@@ -42,15 +38,15 @@ function CommentBox({ onSubmit: onSubmit }: { onSubmit: (comment: string) => voi
 }
 
 class CommentBoxWidget extends ReactWidget {
-    onSubmit: (comment: string) => void;
+    codeMirrorEditor:any;
   
-    constructor(onSubmit: (comment: string) => void) {
+    constructor(codeMirrorEditor:any) {
       super();
-      this.onSubmit = onSubmit;
+      this.codeMirrorEditor = codeMirrorEditor;
     }
   
     render() {
-      return <CommentBox onSubmit={this.onSubmit} />;
+      return <CommentBox codeMirrorEditor={this.codeMirrorEditor} />;
     }
   }
   

@@ -31,10 +31,11 @@ function createOrActivateWidget(app: JupyterFrontEnd, widgetId: string, ReactCom
   }
 }
 
-function handleTooltipClicks(event: MouseEvent, app: JupyterFrontEnd) {
+
+function handleTooltipClicks(event: MouseEvent, app: JupyterFrontEnd,codeMirrorEditor:any) {
   const target = event.target as HTMLElement;
   if (target.matches('#add-icon')) {
-    createOrActivateWidget(app, WIDGET_IDS.COMMENT_BOX, CommentBoxWidget,addIcon);
+    createOrActivateWidget(app, WIDGET_IDS.COMMENT_BOX, ()=>new CommentBoxWidget(codeMirrorEditor),addIcon);
   } else if (target.matches('#react-icon')) {
     createOrActivateWidget(app, WIDGET_IDS.MY_REACT, MyReactWidget,reactIcon);
   } else if (target.matches('#notebook-icon')) {
@@ -78,7 +79,7 @@ const extension: JupyterFrontEndPlugin<void> = {
       }
       const tooltip = document.getElementById('my-tooltip');
       if (tooltip) {
-        tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app));
+        tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app,codeMirrorEditor));
       }
     });
     notebookTracker.activeCellChanged.connect(() => {
