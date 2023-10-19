@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 
@@ -15,7 +15,7 @@ function CommentBox(codeMirrorEditor:any) {
   const handleSubmit = () => {
     if (comment.trim()) {
       // setComment('');
-      console.log(codeMirrorEditor)
+      console.log(codeMirrorEditor,'test2')
     }
   };
 

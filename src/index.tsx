@@ -16,13 +16,13 @@ const WIDGET_IDS = {
   MY_REACT: 'my-react-widget',
 };
 
-function createOrActivateWidget(app: JupyterFrontEnd, widgetId: string, ReactComponent: any,widgetIcon:any) {
+function createOrActivateWidget(app: JupyterFrontEnd, widgetId: string, createWidget: () => ReactWidget, widgetIcon: any) {
   const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
 
   if (existingWidget) {
     app.shell.activateById(widgetId);
   } else {
-    const widget = new ReactComponent();
+    const widget = createWidget();
     widget.id = widgetId;
     widget.title.icon = widgetIcon;
     widget.title.closable = true;
@@ -37,11 +37,11 @@ function handleTooltipClicks(event: MouseEvent, app: JupyterFrontEnd,codeMirrorE
   if (target.matches('#add-icon')) {
     createOrActivateWidget(app, WIDGET_IDS.COMMENT_BOX, ()=>new CommentBoxWidget(codeMirrorEditor),addIcon);
   } else if (target.matches('#react-icon')) {
-    createOrActivateWidget(app, WIDGET_IDS.MY_REACT, MyReactWidget,reactIcon);
+    createOrActivateWidget(app, WIDGET_IDS.MY_REACT,()=>new MyReactWidget(),reactIcon);
   } else if (target.matches('#notebook-icon')) {
-    createOrActivateWidget(app, WIDGET_IDS.QUESTIONNAIRE, QuestionnaireWidget,notebookIcon);
+    createOrActivateWidget(app, WIDGET_IDS.QUESTIONNAIRE,()=>new QuestionnaireWidget(codeMirrorEditor),notebookIcon);
   } else if (target.matches('#close-icon')) {
-    createOrActivateWidget(app, WIDGET_IDS.CHATBOT, ChatBotWidget,closeIcon);
+    createOrActivateWidget(app, WIDGET_IDS.CHATBOT,()=>new ChatBotWidget(codeMirrorEditor),closeIcon);
   }
 }
 
@@ -63,23 +63,24 @@ const extension: JupyterFrontEndPlugin<void> = {
   activate: (app: JupyterFrontEnd, notebookTracker: INotebookTracker) => {
     document.addEventListener('mouseup', (event) => {
       const activeCell = notebookTracker.activeCell;
+      const codeMirrorEditor: any = activeCell?.editor;
+      const selectedText = codeMirrorEditor?.getSelection();
       if (!activeCell){return}
       if (activeCell.model.type === 'code') {
-        const codeMirrorEditor: any = activeCell.editor;
+        const codeMirrorEditor: any = activeCell?.editor;
         const selectedText = codeMirrorEditor?.getSelection();
         if (selectedText && (selectedText.start.line !== selectedText.end.line || selectedText.start.column !== selectedText.end.column)) {
-          showTooltip(event, codeMirrorEditor, "code",app);
+          showTooltip(event, selectedText, "code",app);
         }
       } else if (activeCell.model.type === "markdown") {
         const selectedText = window.getSelection()?.toString();
-        const codeMirrorEditor: any = activeCell.editor;
         if (selectedText && selectedText.trim() !== "") {
-          showTooltip(event, codeMirrorEditor, "markdown",app);
+          showTooltip(event, selectedText, "markdown",app);
         }
       }
       const tooltip = document.getElementById('my-tooltip');
       if (tooltip) {
-        tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app,codeMirrorEditor));
+        tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app,selectedText));
       }
     });
     notebookTracker.activeCellChanged.connect(() => {
@@ -120,7 +121,7 @@ function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string,
   tooltip.appendChild(createTooltipIcon(reactIcon, 'react-icon'));
 
   // Add event listener for tooltip clicks
-  tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app));
+  tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app,codeMirrorEditor));
 
   document.body.appendChild(tooltip);
   tooltip.style.left = `${event.clientX}px`;
