@@ -10,7 +10,7 @@ class QuestionnaireWidget extends ReactWidget {
   }
 
   render() {
-    return <Questionnaire onSubmit={this.onSubmit} />;
+    return <Questionnaire userId={"test"} />;
   }
 }
 

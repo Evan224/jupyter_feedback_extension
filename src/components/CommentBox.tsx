@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 
-function CommentBox(codeMirrorEditor:any) {
+function CommentBox(params:any) {
   const [comment, setComment] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -10,12 +10,39 @@ function CommentBox(codeMirrorEditor:any) {
     console.log(emojiObject);  // Log the emojiObject
     setComment(prevComment => prevComment + emojiObject.emoji);
   };
-  
 
   const handleSubmit = () => {
+    console.log('Submitting comment:', params)
     if (comment.trim()) {
-      // setComment('');
-      console.log(codeMirrorEditor,'test2')
+      // Assuming you have an endpoint at /comments to receive the comment
+      fetch('http://localhost:3000/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          comment: comment,
+          start_line:params.params.start.line,
+          end_line:params.params.end.line,
+          start_column:params.params.start.column,
+          end_column:params.params.end.column,
+          user_id:params.params.uuid,
+          selected_text:params.params.selected_text,
+        }),
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Comment submitted:', data);
+        setComment(''); // Clear the comment box after successful submission
+      })
+      .catch(error => {
+        console.error('Error submitting comment:', error);
+      });
     }
   };
 
@@ -38,17 +65,16 @@ function CommentBox(codeMirrorEditor:any) {
 }
 
 class CommentBoxWidget extends ReactWidget {
-    codeMirrorEditor:any;
+    params:any;
   
-    constructor(codeMirrorEditor:any) {
+    constructor(params:any) {
       super();
-      this.codeMirrorEditor = codeMirrorEditor;
+      this.params = params;
     }
   
     render() {
-      return <CommentBox codeMirrorEditor={this.codeMirrorEditor} />;
+      return <CommentBox params={this.params} />;
     }
-  }
-  
+}
 
 export default CommentBoxWidget;
