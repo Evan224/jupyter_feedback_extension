@@ -2,13 +2,13 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin,
 } from '@jupyterlab/application';
-import { INotebookTracker } from '@jupyterlab/notebook';
+import { INotebookModel, INotebookTracker} from '@jupyterlab/notebook';
 import { reactIcon, addIcon, closeIcon, notebookIcon } from '@jupyterlab/ui-components';
 import { ReactWidget } from '@jupyterlab/apputils';
 import CommentBoxWidget from './components/CommentBox';
 import QuestionnaireWidget from './components/QuestionaireWidget';
 import ChatBotWidget from './components/ChatBoxWidget';
-// import { EventTracker } from './utils/EventTracker';
+import { EventTracker } from './utils/EventTracker';
 import { checkAndSendUser } from './utils/initUser';
 
 const WIDGET_IDS = {
@@ -18,7 +18,7 @@ const WIDGET_IDS = {
   MY_REACT: 'my-react-widget',
 };
 
-// const eventTracker = new EventTracker('http://localhost:8000/api/v1/events/');
+const eventTracker = new EventTracker('http://localhost:3000/events');
 
 function createOrActivateWidget(app: JupyterFrontEnd, widgetId: string, createWidget: () => ReactWidget, widgetIcon: any) {
   const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
@@ -107,27 +107,42 @@ function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string,
   document.addEventListener('mousedown', onClickOutside);
 }
 
+
 const extension: JupyterFrontEndPlugin<void> = {
   id: 'my-extension',
   autoStart: true,
   requires: [INotebookTracker],
   activate: (app: JupyterFrontEnd, notebookTracker: INotebookTracker) => {
     checkAndSendUser();
+    eventTracker.registerJupyterLabEventListeners(notebookTracker);
     document.addEventListener('mouseup', (event) => {
       const activeCell = notebookTracker.activeCell;
       // const codeMirrorEditor: any = activeCell?.editor;
       // const selectedText = codeMirrorEditor?.getSelection();
-      if (!activeCell){return}
-      if (activeCell.model.type === 'code') {
+      if (!activeCell?.model){return}
+      if (activeCell.model?.type && activeCell.model?.type === 'code') {
         const codeMirrorEditor: any = activeCell?.editor;
         const selectedText = codeMirrorEditor?.getSelection();
         if (selectedText && (selectedText.start.line !== selectedText.end.line || selectedText.start.column !== selectedText.end.column)) {
-          console.log(window.getSelection()?.toString());
+          eventTracker.sendEvent('code-selection', {
+            cellId: activeCell.model.id,
+            selectedText: selectedText,
+            currentListOrder:activeCell?.dataset?.windowedListIndex,
+            // @ts-ignore
+            currentPromptNumber: activeCell.prompt,
+          });
           showTooltip(event, {...selectedText,selected_text:window.getSelection()?.toString()}, "code",app);
         }
-      } else if (activeCell.model.type === "markdown") {
+      } else if (activeCell.model?.type === "markdown") {
         const selectedText = window.getSelection()?.toString();
         if (selectedText && selectedText.trim() !== "") {
+          eventTracker.sendEvent('code-selection', {
+            cellId: activeCell.model.id,
+            selectedText: selectedText,
+            currentListOrder:activeCell?.dataset?.windowedListIndex,
+            // @ts-ignore
+            currentPromptNumber: activeCell.prompt,
+          });
           showTooltip(event, selectedText, "markdown",app);
         }
       }
@@ -138,6 +153,8 @@ const extension: JupyterFrontEndPlugin<void> = {
         tooltip.remove();
       }
     });
+
+
   },
 };
 
