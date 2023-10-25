@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ReactWidget } from '@jupyterlab/ui-components';
-
 interface IChatBotProps {
   onSendMessage: (message: string) => void;
 }
@@ -16,15 +15,15 @@ function ChatBotComponent({ onSendMessage }: IChatBotProps) {
   };
 
   return (
-    <div>
-      <h3>ChatBot</h3>
-      <textarea 
-        value={message} 
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Type your message..."
-      />
-      <button onClick={handleSubmit}>Send</button>
-    </div>
+      <div>
+        <h3>ChatBot</h3>
+        <textarea 
+          value={message} 
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type your message..."
+        />
+        <button onClick={handleSubmit}>Send</button>
+      </div>
   );
 }
 

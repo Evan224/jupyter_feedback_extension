@@ -3,6 +3,7 @@ import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 
 function CommentBox(params:any) {
+  console.log(params, 'paramsis---------')
   const [comment, setComment] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -12,7 +13,6 @@ function CommentBox(params:any) {
   };
 
   const handleSubmit = () => {
-    console.log('Submitting comment:', params)
     if (comment.trim()) {
       // Assuming you have an endpoint at /comments to receive the comment
       fetch('http://localhost:3000/comments', {

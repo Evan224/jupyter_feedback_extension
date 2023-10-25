@@ -11,6 +11,9 @@ import ChatBotWidget from './components/ChatBoxWidget';
 import { EventTracker } from './utils/EventTracker';
 import { checkAndSendUser } from './utils/initUser';
 
+// import the teacher's version
+import CommentBoxDisplay from './components/CommentBoxDisplay';
+
 const WIDGET_IDS = {
   COMMENT_BOX: 'comment-box-widget',
   QUESTIONNAIRE: 'questionnaire-widget',
@@ -20,19 +23,21 @@ const WIDGET_IDS = {
 
 const eventTracker = new EventTracker('http://localhost:3000/events');
 
-function createOrActivateWidget(app: JupyterFrontEnd, widgetId: string, createWidget: () => ReactWidget, widgetIcon: any) {
-  const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId);
+function createOrActivateWidget(app: JupyterFrontEnd, widgetId: string, createWidget: () => ReactWidget, widgetIcon: any, newParams?: any) {
+  const existingWidget = Array.from(app.shell.widgets("right")).find(widget => (widget as any)?.id === widgetId) as any;
 
   if (existingWidget) {
-    app.shell.activateById(widgetId);
-  } else {
+    // remove the widget
+    existingWidget.dispose();
+    
+    // app.shell.activateById(widgetId);
+  } 
     const widget = createWidget();
     widget.id = widgetId;
     widget.title.icon = widgetIcon;
     widget.title.closable = true;
     app.shell.add(widget, 'right');
     app.shell.activateById(widget.id);
-  }
 }
 
 
@@ -41,7 +46,7 @@ function handleTooltipClicks(event: MouseEvent, app: JupyterFrontEnd,params:any)
   if (target.matches('#add-icon')) {
     createOrActivateWidget(app, WIDGET_IDS.COMMENT_BOX, ()=>new CommentBoxWidget(params),addIcon);
   } else if (target.matches('#react-icon')) {
-    createOrActivateWidget(app, WIDGET_IDS.MY_REACT,()=>new MyReactWidget(),reactIcon);
+    createOrActivateWidget(app, WIDGET_IDS.MY_REACT, () => new CommentBoxDisplay(params), reactIcon, params);
   } else if (target.matches('#notebook-icon')) {
     createOrActivateWidget(app, WIDGET_IDS.QUESTIONNAIRE,()=>new QuestionnaireWidget(params),notebookIcon);
   } else if (target.matches('#close-icon')) {
@@ -90,7 +95,7 @@ function showTooltip(event: MouseEvent, codeMirrorEditor: any, cellType: string,
   tooltip.appendChild(createTooltipIcon(reactIcon, 'react-icon'));
 
   // Add event listener for tooltip clicks
-  tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app,codeMirrorEditor));
+  tooltip.addEventListener('click', (e) => handleTooltipClicks(e, app,{...codeMirrorEditor,cell_type:cellType}));
 
   document.body.appendChild(tooltip);
   tooltip.style.left = `${event.clientX}px`;
@@ -115,6 +120,7 @@ const extension: JupyterFrontEndPlugin<void> = {
   activate: (app: JupyterFrontEnd, notebookTracker: INotebookTracker) => {
     checkAndSendUser();
     eventTracker.registerJupyterLabEventListeners(notebookTracker);
+    
     document.addEventListener('mouseup', (event) => {
       const activeCell = notebookTracker.activeCell;
       // const codeMirrorEditor: any = activeCell?.editor;
@@ -131,10 +137,11 @@ const extension: JupyterFrontEndPlugin<void> = {
             // @ts-ignore
             currentPromptNumber: activeCell.prompt,
           });
-          showTooltip(event, {...selectedText,selected_text:window.getSelection()?.toString()}, "code",app);
+          showTooltip(event, {...selectedText,selected_text:window.getSelection()?.toString(),editor:codeMirrorEditor}, "code",app);
         }
       } else if (activeCell.model?.type === "markdown") {
         const selectedText = window.getSelection()?.toString();
+        const codeMirrorEditor: any = activeCell?.editor;
         if (selectedText && selectedText.trim() !== "") {
           eventTracker.sendEvent('code-selection', {
             cellId: activeCell.model.id,
@@ -143,7 +150,8 @@ const extension: JupyterFrontEndPlugin<void> = {
             // @ts-ignore
             currentPromptNumber: activeCell.prompt,
           });
-          showTooltip(event, selectedText, "markdown",app);
+          console.log(activeCell, 'activeCell???asaspdojaspdhad...sasdsadas')
+          showTooltip(event, {editor:activeCell.editor}, "markdown",app);
         }
       }
     });

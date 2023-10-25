@@ -61,10 +61,12 @@
         "@jupyterlab/ui-components": "^4.0.6",
         "@lumino/widgets": "^2.3.0",
         "@types/react-dom": "^18.2.8",
+        "@types/react-syntax-highlighter": "^15.5.9",
         "@types/webpack-env": "^1.18.2",
         "emoji-picker-react": "^4.5.2",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "react-syntax-highlighter": "^15.5.0",
         "selection-popover": "^0.3.0"
     },
     "devDependencies": {
