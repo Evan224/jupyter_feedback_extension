@@ -10,6 +10,7 @@ import QuestionnaireWidget from './components/QuestionaireWidget';
 import ChatBotWidget from './components/ChatBoxWidget';
 import { EventTracker } from './utils/EventTracker';
 import { checkAndSendUser } from './utils/initUser';
+import QuestionnaireDisplayWidget from './components/QuestionnaireDisplay';
 
 // import the teacher's version
 import CommentBoxDisplay from './components/CommentBoxDisplay';
@@ -48,7 +49,7 @@ function handleTooltipClicks(event: MouseEvent, app: JupyterFrontEnd,params:any)
   } else if (target.matches('#react-icon')) {
     createOrActivateWidget(app, WIDGET_IDS.MY_REACT, () => new CommentBoxDisplay(params), reactIcon, params);
   } else if (target.matches('#notebook-icon')) {
-    createOrActivateWidget(app, WIDGET_IDS.QUESTIONNAIRE,()=>new QuestionnaireWidget(params),notebookIcon);
+    createOrActivateWidget(app, WIDGET_IDS.QUESTIONNAIRE,()=>new QuestionnaireDisplayWidget(params),notebookIcon);
   } else if (target.matches('#close-icon')) {
     createOrActivateWidget(app, WIDGET_IDS.CHATBOT,()=>new ChatBotWidget(params),closeIcon);
   }
