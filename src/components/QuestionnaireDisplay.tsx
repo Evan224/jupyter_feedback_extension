@@ -35,7 +35,6 @@ function QuestionnaireDisplay({ questionnaireId }: IQuestionnaireDisplayProps) {
 
 
   if (!data) { return <div>Loading...</div>; }
-  console.log(data,'-------------data---------------')
 
   return (
     <div>

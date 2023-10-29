@@ -1,14 +1,35 @@
 import { useState } from 'react';
 import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
+import {
+  JupyterFrontEnd,
+} from '@jupyterlab/application';
+import {INotebookTracker} from '@jupyterlab/notebook';
 
 function CommentBox(params:any) {
-  console.log(params, 'paramsis---------')
+  console.log(params,'-----------I hope you can change!!!!')
+  const {app,notebookTracker}:{
+    app:JupyterFrontEnd,
+    notebookTracker:INotebookTracker
+  } = params.params;
+  if(!app){
+    return <div>please wait</div>
+  }
+
   const [comment, setComment] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const position=notebookTracker?.activeCell?.editor?.getSelection() as any;
+  const selected_text =window.getSelection()?.toString();
+  const user_id = localStorage.getItem("user_id");
+  let start = {line:0,column:0};
+  let end = {line:0,column:0};
+
+  if(position){
+    start=position.start;
+    end=position.end;
+  }
 
   const handleEmojiClick = (emojiObject:any) => {
-    console.log(emojiObject);  // Log the emojiObject
     setComment(prevComment => prevComment + emojiObject.emoji);
   };
 
@@ -22,12 +43,13 @@ function CommentBox(params:any) {
         },
         body: JSON.stringify({
           comment: comment,
-          start_line:params.params.start.line,
-          end_line:params.params.end.line,
-          start_column:params.params.start.column,
-          end_column:params.params.end.column,
-          user_id:params.params.uuid,
-          selected_text:params.params.selected_text,
+          start_line:start.line,
+          end_line:end.line,
+          start_column:start.column,
+          end_column:end.column,
+          user_id:user_id,
+          selected_text:selected_text,
+          cell_number:notebookTracker?.activeCell?.dataset?.windowedListIndex,
         }),
       })
       .then(response => {
@@ -37,7 +59,6 @@ function CommentBox(params:any) {
         return response.json();
       })
       .then(data => {
-        console.log('Comment submitted:', data);
         setComment(''); // Clear the comment box after successful submission
       })
       .catch(error => {
@@ -70,6 +91,11 @@ class CommentBoxWidget extends ReactWidget {
     constructor(params:any) {
       super();
       this.params = params;
+    }
+
+    updateParams(params:any){
+      this.params = params;
+      this.update();
     }
   
     render() {

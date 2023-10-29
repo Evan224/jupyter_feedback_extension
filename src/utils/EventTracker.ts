@@ -51,7 +51,7 @@ export class EventTracker {
       console.warn("User ID not found in localStorage. Unable to send event.");
       return;
     }
-    console.log(`Sending event ${eventType} to ${this.apiUrl}`);
+    // console.log(`Sending event ${eventType} to ${this.apiUrl}`);
     /* The code block is sending an HTTP POST request to the specified API endpoint (`this.apiUrl`) with
   the event data as the request payload. The request includes the user ID, event type, event data,
   and timestamp. The request is sent with the "Content-Type" header set to "application/json" to
