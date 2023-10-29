@@ -4,12 +4,12 @@ interface IChatBotProps {
   onSendMessage: (message: string) => void;
 }
 
-function ChatBotComponent({ onSendMessage }: IChatBotProps) {
+function ChatBotComponent() {
   const [message, setMessage] = useState('');
 
   const handleSubmit = () => {
     if (message.trim()) {
-      onSendMessage(message);
+      // onSendMessage(message);
       setMessage(''); // Clear the input after sending
     }
   };
@@ -28,15 +28,15 @@ function ChatBotComponent({ onSendMessage }: IChatBotProps) {
 }
 
 class ChatBotWidget extends ReactWidget {
-    onSendMessage: (message: string) => void;
+    // onSendMessage: (message: string) => void;
   
-    constructor(onSendMessage: (message: string) => void) {
+    constructor() {
       super();
-      this.onSendMessage = onSendMessage;
+      // this.onSendMessage = onSendMessage;
     }
   
     render() {
-      return <ChatBotComponent onSendMessage={this.onSendMessage} />;
+      return <ChatBotComponent />;
     }
   }
   

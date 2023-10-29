@@ -2,15 +2,20 @@ import { ReactWidget } from '@jupyterlab/ui-components';
 import Questionnaire from './Questionnaire';
 
 class QuestionnaireWidget extends ReactWidget {
-  onSubmit: (answers: string[]) => void;
-
-  constructor(onSubmit: (answers: string[]) => void) {
+  params:any;
+  
+  constructor(params:any) {
     super();
-    this.onSubmit = onSubmit;
+    this.params = params;
+  }
+
+  updateParams(params:any){
+    this.params = params;
+    this.update();
   }
 
   render() {
-    return <Questionnaire userId={"test"} />;
+    return <Questionnaire userId={"test"} params={this.params}/>;
   }
 }
 

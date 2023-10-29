@@ -63,7 +63,6 @@ const extension: JupyterFrontEndPlugin<void> = {
       }
     });
     notebookTracker.activeCellChanged.connect(() => {
-      console.log('所以我变了吗')
       updateSidebarWidget(app, notebookTracker);
     });
   },

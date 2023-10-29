@@ -7,7 +7,6 @@ import {
 import {INotebookTracker} from '@jupyterlab/notebook';
 
 function CommentBox(params:any) {
-  console.log(params,'-----------I hope you can change!!!!')
   const {app,notebookTracker}:{
     app:JupyterFrontEnd,
     notebookTracker:INotebookTracker

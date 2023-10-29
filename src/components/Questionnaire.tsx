@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 
-interface IQuestionnaireProps {
-  userId: string;
-}
 
-function Questionnaire({ userId }: IQuestionnaireProps) {
+
+function Questionnaire(params:any) {
   const [data, setData] = useState<any>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
+
+  const user_id = localStorage.getItem("user_id");
 
   useEffect(() => {
     // Fetch the questionnaire data when the component mounts
@@ -23,7 +23,7 @@ function Questionnaire({ userId }: IQuestionnaireProps) {
     }));
 
     const payload = {
-      user_id: userId,
+      user_id,
       answers: answersArray
     };
 

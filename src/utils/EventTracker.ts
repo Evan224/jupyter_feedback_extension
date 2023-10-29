@@ -169,11 +169,5 @@ export class EventTracker {
         this.sendEvent("cell_executed", eventData);
       }, 1000),
     );
-
-    console.log(
-      notebookTracker?.currentWidget,
-      "--------",
-      notebookTracker?.widgetUpdated,
-    );
   }
 }
