@@ -28,11 +28,16 @@ function ChatBotComponent() {
 }
 
 class ChatBotWidget extends ReactWidget {
-    // onSendMessage: (message: string) => void;
+    params: any;
   
-    constructor() {
+    constructor(params:any) {
       super();
-      // this.onSendMessage = onSendMessage;
+      this.params = params;
+    }
+
+    updateParams(params:any){
+      this.params = params;
+      this.update();
     }
   
     render() {

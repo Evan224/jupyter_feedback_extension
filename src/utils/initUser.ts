@@ -1,7 +1,8 @@
 export const checkAndSendUser = () => {
   let USER_ID = localStorage.getItem("user_id");
 
-  if (!USER_ID) {
+  //TODO: currently
+  if (1) {
     fetch("http://localhost:3000/users", {
       method: "POST",
       headers: {

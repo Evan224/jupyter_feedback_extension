@@ -15,6 +15,8 @@ import ChatBotWidget from "../components/ChatBoxWidget";
 import QuestionnaireDisplayWidget from "../components/QuestionnaireDisplay";
 import CommentBoxDisplay from "../components/CommentBoxDisplay";
 import { INotebookTracker } from "@jupyterlab/notebook";
+import { ToolbarButton } from "@jupyterlab/apputils";
+import { showQuestionnaire } from "../components/QuestionaireWidget";
 
 const WIDGET_IDS = {
   COMMENT_BOX: "comment-box-widget",
@@ -29,28 +31,42 @@ export const createOrActivateWidget = (
   app: JupyterFrontEnd,
   notebookTracker: INotebookTracker,
 ) => {
+  const user_type = localStorage.getItem("user_type");
   const existingWidget = Array.from(app.shell.widgets("right")).find((widget) =>
     (widget as any)?.id === widgetId
   ) as any;
 
   if (existingWidget) {
     app.shell.activateById(existingWidget.id);
-    console.log("activateById", existingWidget.id);
     return;
   }
   let widget;
   if (widgetId === WIDGET_IDS.COMMENT_BOX) {
-    widget = new CommentBoxWidget({
-      app: app,
-      notebookTracker: notebookTracker,
-    });
+    if (user_type === "student") {
+      widget = new CommentBoxWidget({
+        app: app,
+        notebookTracker: notebookTracker,
+      });
+    } else {
+      widget = new CommentBoxDisplay({
+        app: app,
+        notebookTracker: notebookTracker,
+      });
+    }
   } else if (widgetId === WIDGET_IDS.QUESTIONNAIRE) {
-    widget = new QuestionnaireWidget({
-      app: app,
-      notebookTracker: notebookTracker,
-    });
+    if (user_type === "student") {
+      widget = new QuestionnaireWidget({
+        app: app,
+        notebookTracker: notebookTracker,
+      });
+    } else {
+      widget = new QuestionnaireDisplayWidget({
+        app: app,
+        notebookTracker: notebookTracker,
+      });
+    }
   } else if (widgetId === WIDGET_IDS.CHATBOT) {
-    widget = new ChatBotWidget();
+    widget = new ChatBotWidget({});
   } else if (widgetId === WIDGET_IDS.MY_REACT) {
     widget = new CommentBoxDisplay({
       app: app,
@@ -68,32 +84,6 @@ export const createOrActivateWidget = (
   app.shell.activateById(widget.id);
 };
 
-// export function createOrActivateWidget(
-//   app: JupyterFrontEnd,
-//   widgetId: string,
-//   createWidget: () => ReactWidget,
-//   widgetIcon: any,
-//   newParams?: any,
-// ) {
-//   const existingWidget = Array.from(app.shell.widgets("right")).find((widget) =>
-//     (widget as any)?.id === widgetId
-//   ) as any;
-
-//   if (existingWidget) {
-//     // remove the widget
-//     existingWidget.dispose();
-
-//     // app.shell.activateById(widgetId);
-//   }
-//   const widget = createWidget();
-//   widget.id = widgetId;
-//   widget.title.icon = widgetIcon;
-//   widget.title.closable = true;
-//   app.shell.add(widget, "right");
-//   app.shell.activateById(widget.id);
-// }
-
-//handleToolTipClick should only change the state of the widget
 export function handleTooltipClicks(
   event: MouseEvent,
   app: JupyterFrontEnd,
@@ -104,7 +94,6 @@ export function handleTooltipClicks(
   if (!iconWrapper) {
     return;
   } // 如果没有找到匹配的元素则返回
-  console.log(iconWrapper, "---------------------");
   let widgetId = "";
   let widgetIcon: any;
   if (iconWrapper.matches("#add-icon")) {
@@ -128,37 +117,6 @@ export function handleTooltipClicks(
       notebookTracker,
     );
   }
-  // const params = getParams(notebookTracker);
-  // if (!params) return; // 如果无法获取参数，则返回
-  // if (target.matches("#add-icon")) {
-  //   createOrActivateWidget(
-  //     app,
-  //     WIDGET_IDS.COMMENT_BOX,
-  //     () => new CommentBoxWidget(params),
-  //     addIcon,
-  //   );
-  // } else if (target.matches("#react-icon")) {
-  //   createOrActivateWidget(
-  //     app,
-  //     WIDGET_IDS.MY_REACT,
-  //     () => new CommentBoxDisplay(params),
-  //     reactIcon,
-  //     params,
-  //   );
-  // } else if (target.matches("#notebook-icon")) {
-  //   createOrActivateWidget(
-  //     app,
-  //     WIDGET_IDS.QUESTIONNAIRE,
-  //     () => new QuestionnaireDisplayWidget(params),
-  //     notebookIcon,
-  //   );
-  // } else if (target.matches("#close-icon")) {
-  //   createOrActivateWidget(
-  //     app,
-  //     WIDGET_IDS.CHATBOT,
-  //     () => new ChatBotWidget(params),
-  //     closeIcon,
-  //   );
 }
 
 export function createTooltipIcon(icon: any, id: string): HTMLElement {
@@ -174,17 +132,42 @@ export function createTooltipIcon(icon: any, id: string): HTMLElement {
   return iconWrapper;
 }
 
+function getSelectionCoordinates() {
+  const selection = window.getSelection();
+  if (selection?.rangeCount || 0 > 0) {
+    const range = selection?.getRangeAt(0); // 获取第一个选中区域
+    const rect = range?.getBoundingClientRect(); // 获取选中区域的边界矩形
+    if (!rect) {
+      return null;
+    }
+    const coordinates = {
+      x: rect.left + window.scrollX,
+      y: rect.top + window.scrollY,
+      width: rect.width,
+      height: rect.height,
+    };
+    return coordinates;
+  }
+  return null;
+}
+
 // 3. Create a tooltip and append it to the DOM
 export function showTooltip(
   event: MouseEvent,
   app: JupyterFrontEnd,
   notebookTracker: INotebookTracker,
 ) {
+  const coordinates = getSelectionCoordinates();
   const existingTooltip = document.getElementById("my-tooltip");
   if (existingTooltip) {
-    existingTooltip.style.display = "block";
-    existingTooltip.style.left = `${event.clientX}px`;
-    existingTooltip.style.top = `${event.clientY}px`;
+    existingTooltip.style.display = "inline-block";
+    if (coordinates) {
+      existingTooltip.style.left = `${coordinates.x}px`;
+      existingTooltip.style.top = `${coordinates.y + coordinates.height}px`;
+    } else {
+      existingTooltip.style.left = `${event.clientX}px`;
+      existingTooltip.style.top = `${event.clientY}px`;
+    }
     return;
   }
 
@@ -193,12 +176,17 @@ export function showTooltip(
   tooltip.style.position = "absolute";
   tooltip.style.background = "lightgray";
   tooltip.style.border = "1px solid black";
-  tooltip.style.padding = "5px";
+  tooltip.style.padding = "2px";
   tooltip.style.zIndex = "1000";
+  tooltip.style.display = "flex";
+  tooltip.style.flexDirection = "row";
+  tooltip.style.flexWrap = "nowrap";
+  tooltip.style.justifyContent = "space-around";
+  tooltip.style.alignItems = "center";
 
   // Append tooltip icons
   tooltip.appendChild(createTooltipIcon(addIcon, "add-icon"));
-  tooltip.appendChild(createTooltipIcon(closeIcon, "close-icon"));
+  // tooltip.appendChild(createTooltipIcon(closeIcon, "close-icon"));
   tooltip.appendChild(createTooltipIcon(notebookIcon, "notebook-icon"));
   tooltip.appendChild(createTooltipIcon(reactIcon, "react-icon"));
 
@@ -209,8 +197,13 @@ export function showTooltip(
   );
 
   document.body.appendChild(tooltip);
-  tooltip.style.left = `${event.clientX}px`;
-  tooltip.style.top = `${event.clientY}px`;
+  if (coordinates) {
+    tooltip.style.left = `${coordinates.x}px`;
+    tooltip.style.top = `${coordinates.y + coordinates.height}px`;
+  } else {
+    tooltip.style.left = `${event.clientX}px`;
+    tooltip.style.top = `${event.clientY}px`;
+  }
 
   // Handle tooltip dismissal
   const onClickOutside = (e: MouseEvent) => {
@@ -222,19 +215,6 @@ export function showTooltip(
 
   document.addEventListener("mousedown", onClickOutside);
 }
-
-// function getParams(notebookTracker: INotebookTracker) {
-//   const activeCell = notebookTracker.activeCell;
-//   if (!activeCell) return null;
-
-//   const codeMirrorEditor = activeCell.editor;
-//   const selectedText = codeMirrorEditor?.getSelection();
-
-//   return {
-//     selectedText: selectedText,
-//     // ... 其他需要的参数
-//   };
-// }
 
 export function updateSidebarWidget(
   app: JupyterFrontEnd,
@@ -254,7 +234,24 @@ export function updateSidebarWidget(
       (widget) => (widget as any)?.id === widgetId,
     ) as any;
     if (existingWidget) {
-      existingWidget.updateParams(params); // 假设你的 widget 有一个 updateParams 方法来更新其参数
+      existingWidget?.updateParams(params);
     }
   }
+}
+
+export function addToolbarButton(
+  app: JupyterFrontEnd,
+  notebookTracker: INotebookTracker,
+) {
+  notebookTracker.currentChanged.connect(() => {
+    const toolbar = notebookTracker?.currentWidget?.toolbar;
+    const button = new ToolbarButton({
+      icon: notebookIcon,
+      onClick: () => {
+        showQuestionnaire(app, "file");
+      },
+      tooltip: "完成问卷",
+    });
+    toolbar?.addItem("questionnaireButton", button);
+  });
 }

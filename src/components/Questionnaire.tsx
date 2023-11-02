@@ -1,70 +1,69 @@
 import { useState, useEffect } from 'react';
+import { Header, Segment, Radio, Button } from 'semantic-ui-react';
 
+function Questionnaire(params: any) {
+    const [data, setData] = useState<any>(null);
+    const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
 
+    const user_id = localStorage.getItem("user_id");
 
-function Questionnaire(params:any) {
-  const [data, setData] = useState<any>(null);
-  const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
+    useEffect(() => {
+        // Fetch the questionnaire data when the component mounts
+        fetch('http://localhost:3000/questionnaires/1')
+            .then(response => response.json())
+            .then(data => setData(data))
+            .catch(error => console.error('Error fetching questionnaire:', error));
+    }, []);
 
-  const user_id = localStorage.getItem("user_id");
+    const handleSubmit = () => {
+        const answersArray = Object.entries(selectedAnswers).map(([questionId, answerId]) => ({
+            question_id: parseInt(questionId),
+            answer_id: answerId
+        }));
 
-  useEffect(() => {
-    // Fetch the questionnaire data when the component mounts
-    fetch('http://localhost:3000/questionnaires/1')
-      .then(response => response.json())
-      .then(data => setData(data))
-      .catch(error => console.error('Error fetching questionnaire:', error));
-  }, []);
+        const payload = {
+            user_id,
+            answers: answersArray
+        };
 
-  const handleSubmit = () => {
-    const answersArray = Object.entries(selectedAnswers).map(([questionId, answerId]) => ({
-      question_id: parseInt(questionId),
-      answer_id: answerId
-    }));
-
-    const payload = {
-      user_id,
-      answers: answersArray
+        // Post the data to the backend
+        fetch('http://localhost:3000/submit-all-answers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(response => response.json())
+            .then(result => console.log('Submitted:', result))
+            .catch(error => console.error('Error submitting answers:', error));
     };
 
-    // Post the data to the backend
-    fetch('http://localhost:3000/submit-all-answers', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-    .then(response => response.json())
-    .then(result => console.log('Submitted:', result))
-    .catch(error => console.error('Error submitting answers:', error));
-  };
+    if (!data) { return <Segment placeholder loading />; }
 
-  if (!data) {return <div>Loading...</div>;}
-
-  return (
-    <div>
-      <h3>{data.title}</h3>
-      <p>{data.description}</p>
-      {data.Questions.map((question: any) => (
-        <div key={question.id}>
-          <p>{question.question_text}</p>
-          {question.Answers.map((answer: any) => (
-            <div key={answer.id}>
-              <input 
-                type="radio" 
-                name={`question-${question.id}`} 
-                value={answer.id}
-                onChange={() => setSelectedAnswers(prev => ({ ...prev, [question.id]: answer.id }))}
-              />
-              <label>{answer.answer_text}</label>
-            </div>
-          ))}
-        </div>
-      ))}
-      <button onClick={handleSubmit}>Submit</button>
-    </div>
-  );
+    return (
+        <Segment>
+            <Header as='h3'>{data.title}</Header>
+            <p>{data.description}</p>
+            {data.Questions.map((question: any) => (
+                <Segment key={question.id}>
+                    <Header as='h4'>{question.question_text}</Header>
+                    {question.Answers.map((answer: any) => (
+                        <div key={answer.id}>
+                            <Radio
+                                label={answer.answer_text}
+                                name={`question-${question.id}`}
+                                value={answer.id}
+                                checked={selectedAnswers[question.id] === answer.id}
+                                onChange={() => setSelectedAnswers(prev => ({ ...prev, [question.id]: answer.id }))}
+                            />
+                        </div>
+                    ))}
+                </Segment>
+            ))}
+            <Button positive onClick={handleSubmit}>Submit</Button>
+        </Segment>
+    );
 }
 
 export default Questionnaire;

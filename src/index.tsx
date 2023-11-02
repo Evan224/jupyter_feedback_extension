@@ -7,6 +7,10 @@ import { EventTracker } from './utils/EventTracker';
 import { checkAndSendUser } from './utils/initUser';
 import { showTooltip, createOrActivateWidget} from './utils';
 import { updateSidebarWidget } from './utils';
+import { ToolbarButton } from '@jupyterlab/apputils';
+import { showQuestionnaire } from './components/QuestionaireWidget';
+import {addToolbarButton} from './utils';
+import 'semantic-ui-css/semantic.min.css';
 
 const eventTracker = new EventTracker('http://localhost:3000/events');
 
@@ -15,12 +19,16 @@ const extension: JupyterFrontEndPlugin<void> = {
   autoStart: true,
   requires: [INotebookTracker],
   activate: (app: JupyterFrontEnd, notebookTracker: INotebookTracker) => {
+    //TODO: currently mannually set the userType
+    localStorage.setItem('user_type', 'teacher');
     checkAndSendUser();
+    addToolbarButton(app, notebookTracker);
     eventTracker.registerJupyterLabEventListeners(notebookTracker);
     
     document.addEventListener('mouseup', (event) => {
       const activeCell = notebookTracker.activeCell;
       if (!activeCell?.model){return}
+
       if(activeCell.model?.type==='code'&&!activeCell.node.contains(document.activeElement)){
         //当cell失去焦点，但是本身又存在的时候，tooltip消失
         const tooltip = document.getElementById('my-tooltip');
@@ -37,8 +45,7 @@ const extension: JupyterFrontEndPlugin<void> = {
             cellId: activeCell.model.id,
             selectedText: selectedText,
             currentListOrder:activeCell?.dataset?.windowedListIndex,
-            // @ts-ignore
-            currentPromptNumber: activeCell.prompt,
+            currentPromptNumber: (activeCell as any).prompt,
           });
           showTooltip(event,app,notebookTracker);
         }
@@ -65,6 +72,26 @@ const extension: JupyterFrontEndPlugin<void> = {
     notebookTracker.activeCellChanged.connect(() => {
       updateSidebarWidget(app, notebookTracker);
     });
+
+    notebookTracker.activeCellChanged.connect(() => {
+      const activeCell:any = notebookTracker.activeCell;
+      const toolbar = activeCell?.toolbar;
+      console.log(toolbar,'toolbar');
+      if(!toolbar){
+        console.log('no toolbar')
+        return;
+      }
+      // const toolbar = notebookTracker?.activeCell?.toolbar;
+      const button = new ToolbarButton({
+          iconClass: 'fa fa-question-circle',
+          onClick: () => {
+              // 显示问卷
+              showQuestionnaire(app, 'cell');
+          },
+          tooltip: '完成问卷'
+      });
+      toolbar.addItem('questionnaireButton', button);
+  });
   },
 };
 

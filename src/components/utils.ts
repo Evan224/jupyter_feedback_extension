@@ -64,7 +64,7 @@ function generateMockComments(): { comments: Comment[]; codeDoc: string[] } {
   }
 
   // Generating 20 random comments
-  for (let i = 1; i <= 20; i++) {
+  for (let i = 1; i <= 100; i++) {
     const randomStartLine = Math.floor(Math.random() * 5) + 1; // Random start line between 1 and 5
     const randomEndLine = randomStartLine +
       Math.floor(Math.random() * (6 - randomStartLine)); // Random end line between start line and 5

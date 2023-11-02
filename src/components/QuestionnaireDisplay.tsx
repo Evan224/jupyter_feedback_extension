@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ReactWidget } from '@jupyterlab/ui-components';
+import { Card, Header, Segment, List, Label } from 'semantic-ui-react';
 
 interface IQuestionnaireDisplayProps {
   questionnaireId: number;
@@ -21,47 +22,52 @@ function QuestionnaireDisplay({ questionnaireId }: IQuestionnaireDisplayProps) {
     // which contains the student answers for each question
     const answerCounts: { [key: number]: number } = {};
 
-    question.StudentAnswers.forEach((studentAnswer: any) => {
+    question?.StudentAnswers?.forEach((studentAnswer: any) => {
         const answerId = studentAnswer.answer_id;
         answerCounts[answerId] = (answerCounts[answerId] || 0) + 1;
     });
 
-    return question.Answers.map((answer: any) => (
-        <div key={answer.id}>
+    return question?.Answers?.map((answer: any) => (
+        <Label key={answer.id}>
             {answer.answer_text}: {answerCounts[answer.id] || 0}
-        </div>
+        </Label>
     ));
-};
+  };
 
-
-  if (!data) { return <div>Loading...</div>; }
+  if (!data) { return <Segment loading />; }  // Show loading indicator
 
   return (
-    <div>
-      <h3>{data.title}</h3>
+    <Segment style={{ height: '100%', overflowY: 'auto' }}>
+      <Header as='h3'>{data.title}</Header>
       <p>{data.description}</p>
       {data.Questions?.map((question: any) => (
-        <div key={question.id}>
-          <p>{question.question_text}</p>
-          {renderAnswerStats(question)}
-        </div>
+        <Segment key={question.id}>
+          <Header as='h4'>{question.question_text}</Header>
+          <List>
+            {renderAnswerStats(question)}
+          </List>
+        </Segment>
       ))}
-    </div>
+    </Segment>
   );
 }
 
-
 class QuestionnaireDisplayWidget extends ReactWidget {
-    onSubmit: (answers: string[]) => void;
-  
-    constructor(onSubmit: (answers: string[]) => void) {
+    params: any;
+
+    constructor(params:any) {
       super();
-      this.onSubmit = onSubmit;
+      this.params = params;
     }
-  
+
+    updateParams(params:any){
+      this.params = params;
+      this.update();
+    }
+
     render() {
       return <QuestionnaireDisplay questionnaireId={1}/>;
     }
-  }
-  
-  export default QuestionnaireDisplayWidget;
+}
+
+export default QuestionnaireDisplayWidget;
