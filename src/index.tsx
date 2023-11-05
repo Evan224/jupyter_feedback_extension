@@ -20,7 +20,7 @@ const extension: JupyterFrontEndPlugin<void> = {
   requires: [INotebookTracker],
   activate: (app: JupyterFrontEnd, notebookTracker: INotebookTracker) => {
     //TODO: currently mannually set the userType
-    localStorage.setItem('user_type', 'teacher');
+    localStorage.setItem('user_type', 'student');
     checkAndSendUser();
     addToolbarButton(app, notebookTracker);
     eventTracker.registerJupyterLabEventListeners(notebookTracker);
@@ -74,24 +74,25 @@ const extension: JupyterFrontEndPlugin<void> = {
     });
 
     notebookTracker.activeCellChanged.connect(() => {
-      const activeCell:any = notebookTracker.activeCell;
-      const toolbar = activeCell?.toolbar;
-      console.log(toolbar,'toolbar');
-      if(!toolbar){
-        console.log('no toolbar')
+      const activeCell: any = notebookTracker.activeCell;
+      if (!activeCell) {
         return;
       }
-      // const toolbar = notebookTracker?.activeCell?.toolbar;
-      const button = new ToolbarButton({
-          iconClass: 'fa fa-question-circle',
-          onClick: () => {
-              // 显示问卷
-              showQuestionnaire(app, 'cell');
-          },
-          tooltip: '完成问卷'
-      });
-      toolbar.addItem('questionnaireButton', button);
-  });
+      console.log(activeCell,'----------------');
+      // activeCell.layout.widgets.add 
+      // Create a new button element
+      const button = document.createElement('button');
+      button.className = 'my-button';
+      button.innerText = 'questionnaire';
+      button.onclick = () => {
+        // 显示问卷
+        showQuestionnaire(app, 'cell');
+      };
+
+      activeCell.node.appendChild(button);
+    });
+
+  
   },
 };
 

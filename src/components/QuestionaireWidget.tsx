@@ -26,6 +26,9 @@ class QuestionnaireWidget extends ReactWidget {
 export default QuestionnaireWidget;
 
 export function showQuestionnaire(app: JupyterFrontEnd, target: 'file' | 'cell') {
+
+  // when the type is cell, we need to get the cell id and pass it to the widget
+
   const widget = new QuestionnaireWidget({ target });
   if (target === 'file') {
     widget.id = 'questionnaire-widget-main';

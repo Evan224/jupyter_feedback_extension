@@ -17,6 +17,8 @@ import CommentBoxDisplay from "../components/CommentBoxDisplay";
 import { INotebookTracker } from "@jupyterlab/notebook";
 import { ToolbarButton } from "@jupyterlab/apputils";
 import { showQuestionnaire } from "../components/QuestionaireWidget";
+import RateBox from "../components/RateBox";
+import RateResultViewWidget from "../components/RateResultView";
 
 const WIDGET_IDS = {
   COMMENT_BOX: "comment-box-widget",
@@ -55,12 +57,12 @@ export const createOrActivateWidget = (
     }
   } else if (widgetId === WIDGET_IDS.QUESTIONNAIRE) {
     if (user_type === "student") {
-      widget = new QuestionnaireWidget({
+      widget = new RateBox({
         app: app,
         notebookTracker: notebookTracker,
       });
     } else {
-      widget = new QuestionnaireDisplayWidget({
+      widget = new RateResultViewWidget({
         app: app,
         notebookTracker: notebookTracker,
       });
