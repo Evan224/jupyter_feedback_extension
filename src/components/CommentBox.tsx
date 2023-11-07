@@ -26,7 +26,9 @@ function CommentBox(params: any) {
 
     const handleEmojiClick = (emojiObject: any) => {
         setComment(prevComment => prevComment + emojiObject.emoji);
+        setShowEmojiPicker(false); 
     };
+    
 
     const handleSubmit = () => {
         if (comment.trim()) {

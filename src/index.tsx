@@ -20,7 +20,7 @@ const extension: JupyterFrontEndPlugin<void> = {
   requires: [INotebookTracker],
   activate: (app: JupyterFrontEnd, notebookTracker: INotebookTracker) => {
     //TODO: currently mannually set the userType
-    localStorage.setItem('user_type', 'student');
+    localStorage.setItem('user_type', 'teacher');
     checkAndSendUser();
     addToolbarButton(app, notebookTracker);
     eventTracker.registerJupyterLabEventListeners(notebookTracker);
@@ -78,7 +78,6 @@ const extension: JupyterFrontEndPlugin<void> = {
       if (!activeCell) {
         return;
       }
-      console.log(activeCell,'----------------');
       // activeCell.layout.widgets.add 
       // Create a new button element
       const button = document.createElement('button');

@@ -1,4 +1,6 @@
-// utils.ts
+import { jsPDF } from "jspdf";
+//@ts-ignore
+import Papa from "papaparse";
 interface Comment {
   user_id: string;
   cell_number: number;
@@ -20,6 +22,7 @@ interface TextSelection {
 function aggregateComments(
   comments: Comment[],
   cell_type: "code" | "markdown",
+  filter: string, // 添加filter参数
 ): TextSelection[] {
   const textSelections: TextSelection[] = [];
 
@@ -51,7 +54,43 @@ function aggregateComments(
     }
   });
 
-  return textSelections.sort((a, b) => b.count - a.count);
+  return textSelections
+    .sort((a, b) => b.count - a.count)
+    .filter((data) => {
+      switch (filter) {
+        case "1-5":
+          return data.count >= 1 && data.count <= 5;
+        case "6-10":
+          return data.count >= 6 && data.count <= 10;
+        case "10+":
+          return data.count > 10;
+        default:
+          return true;
+      }
+    });
+}
+
+function exportCommentsToCSV(comments: Comment[]) {
+  const csv = Papa.unparse(comments);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", "comments.csv");
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportCommentsToPDF(comments: Comment[]) {
+  const doc = new jsPDF();
+  let cursorY = 10;
+  comments.forEach((comment, idx) => {
+    doc.text(`Comment ${idx + 1}: ${comment.comment}`, 20, cursorY);
+    cursorY += 10;
+  });
+  doc.save("comments.pdf");
 }
 
 function generateMockComments(): { comments: Comment[]; codeDoc: string[] } {
@@ -84,4 +123,32 @@ function generateMockComments(): { comments: Comment[]; codeDoc: string[] } {
   return { comments, codeDoc };
 }
 
-export { aggregateComments, Comment, generateMockComments, TextSelection };
+function getColorForLineCount(count: any) {
+  if (count > 10) {
+    return "rgba(255, 0, 0, 0.5)"; // 红色，评论很多
+  } else if (count > 5) {
+    return "rgba(255, 165, 0, 0.5)"; // 橙色，评论较多
+  } else if (count > 0) {
+    return "rgba(255, 255, 0, 0.5)"; // 黄色，有一些评论
+  }
+  return ""; // 无评论，无背景色
+}
+
+function generateSummary(comments: any) {
+  if (comments.length === 0) {
+    return "No comments";
+  }
+  // 取第一个评论的前30个字符作为摘要
+  return comments[0].substr(0, 30) + (comments[0].length > 30 ? "..." : "");
+}
+
+export {
+  aggregateComments,
+  Comment,
+  exportCommentsToCSV,
+  exportCommentsToPDF,
+  generateMockComments,
+  generateSummary,
+  getColorForLineCount,
+  TextSelection,
+};
