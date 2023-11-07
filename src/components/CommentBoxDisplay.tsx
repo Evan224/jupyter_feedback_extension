@@ -216,8 +216,6 @@ function TeacherView({ params }: any) {
       </SyntaxHighlighter>
       <CommentsBarChart data={aggregatedData} />
       <Header as='h2'>Comments</Header>
-      <Button onClick={() => exportCommentsToCSV(filteredComments)}>Export to CSV</Button>
-      <Button onClick={() => exportCommentsToPDF(filteredComments)}>Export to PDF</Button>
       <List divided relaxed>
         {aggregatedData.map((data, index) => (
           <List.Item
@@ -286,8 +284,11 @@ function TeacherView({ params }: any) {
 
   return (
     <Segment style={{ height: '100%', overflowY: 'auto' }}>
+      <div style={{ margin: '10px 0' }}>
+        <Button onClick={() => exportCommentsToCSV(filteredComments)}>Export to CSV</Button>
+        <Button onClick={() => exportCommentsToPDF(filteredComments)}>Export to PDF</Button>
+      </div>
       <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
- 
     </Segment>
   );
 }  
