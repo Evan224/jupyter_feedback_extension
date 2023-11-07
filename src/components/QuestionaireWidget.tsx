@@ -2,6 +2,7 @@ import { ReactWidget } from '@jupyterlab/ui-components';
 import Questionnaire from './Questionnaire';
 import { JupyterFrontEnd } from '@jupyterlab/application';
 import {LabIcon,reactIcon} from "@jupyterlab/ui-components";
+import QuestionnaireDisplay from './QuestionnaireDisplay';
 
 class QuestionnaireWidget extends ReactWidget {
   params:any;
@@ -29,8 +30,16 @@ export default QuestionnaireWidget;
 export function showQuestionnaire(app: JupyterFrontEnd, target: 'file' | 'cell') {
 
   // when the type is cell, we need to get the cell id and pass it to the widget
-  
-  const widget = new QuestionnaireWidget({ target });
+  const user_type=localStorage.getItem('user_type');
+  let widget;
+  console.log(user_type)
+  if(user_type==='teacher'){
+    //@ts-ignore
+    widget = new QuestionnaireDisplay({ target });
+  }else{
+    //@ts-ignore
+    widget = new QuestionnaireWidget({ target });
+  }
   const existingWidget = Array.from(app.shell.widgets("right")).find((widget) =>
   (widget as any)?.id === 'questionnaire-widget-right'
 ) as any;

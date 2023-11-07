@@ -190,7 +190,7 @@ export function showTooltip(
   tooltip.appendChild(createTooltipIcon(addIcon, "add-icon"));
   // tooltip.appendChild(createTooltipIcon(closeIcon, "close-icon"));
   tooltip.appendChild(createTooltipIcon(notebookIcon, "notebook-icon"));
-  tooltip.appendChild(createTooltipIcon(reactIcon, "react-icon"));
+  // tooltip.appendChild(createTooltipIcon(reactIcon, "react-icon"));
 
   // Add event listener for tooltip clicks
   tooltip.addEventListener(
@@ -229,6 +229,7 @@ export function updateSidebarWidget(
     // 你可以根据需要添加更多的信息
     const params = {
       app: app,
+      notebookTracker: notebookTracker,
     };
     // 更新widget的参数
     const widgetId = WIDGET_IDS.COMMENT_BOX; // 或其他需要更新的 widget ID

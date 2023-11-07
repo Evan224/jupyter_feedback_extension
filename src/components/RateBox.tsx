@@ -1,31 +1,45 @@
-// File: RateBox.tsx
-
 import React, { useState } from 'react';
 import { Button, Segment } from 'semantic-ui-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 
-function RateBox({ params }: any) {
-    const [rating, setRating] = useState(5);  // Assuming rating scale of 1 to 10
+const emotions = {
+  1: '😞', // 非常不满意
+  2: '😕', // 不满意
+  3: '😐', // 中立
+  4: '🙂', // 满意
+  5: '😀'  // 非常满意
+};
+
+function RateBox({ params}:{params:any} ) {
+    const [rating, setRating] = useState(null);
+
+    const handleEmotionClick = (newRating:any) => {
+        setRating(newRating);
+    };
 
     const handleSubmit = () => {
-        // Handle submission of rating
         console.log('Rating submitted:', rating);
     };
 
     return (
         <Segment>
-            <input
-                type="range"
-                min="1"
-                max="10"
-                value={rating}
-                onChange={(e) => setRating(Number(e.target.value))}
-            />
-            <span>{rating}</span>
+            <div>
+                {Object.entries(emotions).map(([value, emoji]) => (
+                    <Button 
+                      key={value}
+                      onClick={() => handleEmotionClick(Number(value))}
+                      style={{ background: 'none', border: 'none', fontSize: '24px' }}
+                    >
+                        {emoji}
+                    </Button>
+                ))}
+            </div>
             <Button positive onClick={handleSubmit}>Submit Rating</Button>
         </Segment>
     );
 }
+
+
 
 
 class RateBoxWidget extends ReactWidget {

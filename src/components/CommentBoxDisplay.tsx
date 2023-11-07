@@ -7,9 +7,31 @@ import { Segment, Header, List, Accordion, Pagination } from 'semantic-ui-react'
 import { Input, Dropdown } from 'semantic-ui-react';
 import { exportCommentsToCSV,exportCommentsToPDF } from './utils';
 import { Button } from 'semantic-ui-react';
+import { Bar } from 'react-chartjs-2';
+import { Tab } from 'semantic-ui-react';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+interface CommentData {
+  start_line: number;
+  end_line: number;
+  count: number;
+}
+
+function generateMockCellComments(cellCount: number) {
+  return Array.from({ length: cellCount }, (_, index) => ({
+    cellId: index + 1,
+    commentCount: Math.floor(Math.random() * 20), // Random comment count for each cell
+  }));
+}
+
 
 function TeacherView({ params }: any) {
-  const activeCell= params.notebookTracker.activeCell;
+  const activeCell= params?.notebookTracker?.activeCell;
+  if(!activeCell?.model){
+    return <></>
+  }
   const originalCodeDoc= activeCell?.editor?.doc?.text;
   const [comments, setComments] = useState<Comment[]>([]);
   const cell_type = params.cell_type || 'code';
@@ -24,6 +46,23 @@ function TeacherView({ params }: any) {
   const itemsPerPage = 3;
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
+
+  const CommentsBarChart = ({ data }: { data: CommentData[] }) => {
+    const chartData = {
+      labels: data.map(item => `Line ${item.start_line} to ${item.end_line}`),
+      datasets: [
+        {
+          label: 'Number of Comments',
+          data: data.map(item => item.count),
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+        }
+      ]
+    };
+  
+    return <Bar data={chartData} />;
+  };
   const handleSearchChange = (e:any) => {
     setSearchQuery(e.target.value);
   };
@@ -31,6 +70,7 @@ function TeacherView({ params }: any) {
   const handleFilterChange = (e:any) => {
     setFilter(e.target.value);
   };
+
 
   const filterOptions = [
     { key: 'all', text: 'All', value: 'all' },
@@ -103,6 +143,40 @@ function TeacherView({ params }: any) {
     setHoveredSelection(null);
   };
 
+  const mockCellComments = generateMockCellComments(10); // Assuming 10 cells for demonstration
+
+  // Preparing data for the bar chart
+  const chartData = {
+    labels: mockCellComments.map(cell => `Cell ${cell.cellId}`),
+    datasets: [
+      {
+        label: 'Number of Comments per Cell',
+        data: mockCellComments.map(cell => cell.commentCount),
+        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const globalViewPane = (
+    <Tab.Pane attached={false}>
+      <Bar data={chartData} />
+      <List divided relaxed>
+        {mockCellComments.map(cell => (
+          <List.Item key={cell.cellId}>
+            <List.Content>
+              <List.Header>Cell {cell.cellId}</List.Header>
+              <List.Description>
+                Comments: {cell.commentCount}
+              </List.Description>
+            </List.Content>
+          </List.Item>
+        ))}
+      </List>
+    </Tab.Pane>
+  );
+
   const codeString = codeDoc?.join('\n');
 
   useEffect(() => {
@@ -112,9 +186,12 @@ function TeacherView({ params }: any) {
     setAggregatedData(aggregationResult);
   }, [cell_type, codeDoc, searchQuery, filter]); 
 
-  return (
-    <Segment style={{ height: '100%', overflowY: 'auto' }}>
-           <div style={{ margin: '10px 0' }}>
+  const panes = [
+    {
+      menuItem: 'Active Cell',
+      render: () => (
+        <Tab.Pane attached={false}>
+          <div style={{ margin: '10px 0' }}>
         <Input 
           type="text" 
           placeholder="Search comments..." 
@@ -137,6 +214,7 @@ function TeacherView({ params }: any) {
       >
         {codeString}
       </SyntaxHighlighter>
+      <CommentsBarChart data={aggregatedData} />
       <Header as='h2'>Comments</Header>
       <Button onClick={() => exportCommentsToCSV(filteredComments)}>Export to CSV</Button>
       <Button onClick={() => exportCommentsToPDF(filteredComments)}>Export to PDF</Button>
@@ -181,6 +259,35 @@ function TeacherView({ params }: any) {
           </List.Item>
         ))}
       </List>
+        </Tab.Pane>
+      ),
+    },
+    {
+      menuItem: 'Global View',
+      render: () => (
+              <Tab.Pane attached={false}>
+      <Bar data={chartData} />
+      <List divided relaxed>
+        {mockCellComments.map(cell => (
+          <List.Item key={cell.cellId}>
+            <List.Content>
+              <List.Header>Cell {cell.cellId}</List.Header>
+              <List.Description>
+                Comments: {cell.commentCount}
+              </List.Description>
+            </List.Content>
+          </List.Item>
+        ))}
+      </List>
+    </Tab.Pane>
+      ),
+    },
+  ];
+
+  return (
+    <Segment style={{ height: '100%', overflowY: 'auto' }}>
+      <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
+ 
     </Segment>
   );
 }  
@@ -193,7 +300,7 @@ class TeacherViewWidget extends ReactWidget {
     this.params = params;
   }
 
-  updateProps(newParams: any) {
+  updateParams(newParams: any) {
     this.params = newParams;
     this.update();  // 告诉Lumino重新渲染此widget
   }

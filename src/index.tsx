@@ -76,13 +76,22 @@ const extension: JupyterFrontEndPlugin<void> = {
     notebookTracker.activeCellChanged.connect(() => {
       const activeCell: any = notebookTracker.activeCell;
       if (!activeCell) {
+        const button = document.getElementById('questionnaire-button-cell');
+        if (button) {
+          button.remove();
+        }
         return;
       }
-      // activeCell.layout.widgets.add 
-      // Create a new button element
-      const button = document.createElement('button');
+      // if already has a button, delete first
+      let button:any;
+      button = document.getElementById('questionnaire-button-cell');
+      if (button) {
+        button.remove();
+      }
+      button = document.createElement('button');
       button.className = 'my-button';
       button.innerText = 'questionnaire';
+      button.id='questionnaire-button-cell';
       button.onclick = () => {
         // 显示问卷
         showQuestionnaire(app, 'cell');
