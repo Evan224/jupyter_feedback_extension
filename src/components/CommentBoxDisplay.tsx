@@ -36,13 +36,7 @@ function TeacherView({ params }: any) {
   if(!activeCell?.model){
     return <></>
   }
-  const scrollToCell = (cellIndex: number) => {
-    const cell = cellsArray[cellIndex];
-    if (cell && cell.node) {
-      cell.node.scrollIntoView({ behavior: 'smooth',block:'center' });
-      content.activeCellIndex = cellIndex;
-    }
-  };
+
   const originalCodeDoc= activeCell?.editor?.doc?.text;
   const [comments, setComments] = useState<Comment[]>([]);
   const cell_type = params.cell_type || 'code';
@@ -58,6 +52,14 @@ function TeacherView({ params }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
 
+  const scrollToCell = (cellIndex: number) => {
+    const cell = cellsArray[cellIndex];
+    if (cell && cell.node) {
+      cell.node.scrollIntoView({ behavior: 'smooth',block:'center' });
+      content.activeCellIndex = cellIndex;
+    }
+    
+  };
   const CommentsBarChart = ({ data }: { data: CommentData[] }) => {
     const chartData = {
       labels: data.map(item => `Line ${item.start_line} to ${item.end_line}`),

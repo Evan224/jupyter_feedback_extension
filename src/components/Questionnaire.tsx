@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Header, Segment, Radio, Button } from 'semantic-ui-react';
+import { Header, Segment, Radio, Button, Message } from 'semantic-ui-react';
 
 function Questionnaire(params: any) {
     const [data, setData] = useState<any>(null);
     const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
+    const [message, setMessage] = useState({ show: false, success: false, content: '' });
 
     const user_id = localStorage.getItem("user_id");
 
@@ -12,7 +13,10 @@ function Questionnaire(params: any) {
         fetch('http://localhost:3000/questionnaires/1')
             .then(response => response.json())
             .then(data => setData(data))
-            .catch(error => console.error('Error fetching questionnaire:', error));
+            .catch(error => {
+                console.error('Error fetching questionnaire:', error);
+                setMessage({ show: true, success: false, content: 'Error fetching data' });
+            });
     }, []);
 
     const handleSubmit = () => {
@@ -35,8 +39,14 @@ function Questionnaire(params: any) {
             body: JSON.stringify(payload)
         })
             .then(response => response.json())
-            .then(result => console.log('Submitted:', result))
-            .catch(error => console.error('Error submitting answers:', error));
+            .then(result => {
+                console.log('Submitted:', result);
+                setMessage({ show: true, success: true, content: 'Answers submitted successfully!' });
+            })
+            .catch(error => {
+                console.error('Error submitting answers:', error);
+                setMessage({ show: true, success: false, content: 'Error submitting answers' });
+            });
     };
 
     if (!data) { return <Segment placeholder loading />; }
@@ -62,6 +72,13 @@ function Questionnaire(params: any) {
                 </Segment>
             ))}
             <Button positive onClick={handleSubmit}>Submit</Button>
+            {message.show && (
+                <Message
+                    success={message.success}
+                    error={!message.success}
+                    content={message.content}
+                />
+            )}
         </Segment>
     );
 }

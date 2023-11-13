@@ -3,16 +3,17 @@ import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 import { JupyterFrontEnd } from '@jupyterlab/application';
 import { INotebookTracker } from '@jupyterlab/notebook';
-import { Button, TextArea, Segment, Modal } from 'semantic-ui-react';
+import { Button, TextArea, Segment, Modal, Message } from 'semantic-ui-react';
 
 function CommentBox(params: any) {
     const { app, notebookTracker }: { app: JupyterFrontEnd; notebookTracker: INotebookTracker } = params.params;
     if (!app) {
         return <Segment placeholder loading />;
     }
+    const [submitSuccess, setSubmitSuccess] = useState(false); // 新增状态，用于追踪提交状态
 
     const [comment, setComment] = useState('');
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker]= useState(false);
     const position = notebookTracker?.activeCell?.editor?.getSelection() as any;
     const selected_text = window.getSelection()?.toString();
     const user_id = localStorage.getItem("user_id");
@@ -55,10 +56,16 @@ function CommentBox(params: any) {
                     return response.json();
                 })
                 .then(data => {
-                    setComment('');  // Clear the comment box after successful submission
+                    setComment('');
+                    setSubmitSuccess(true); // 设置为 true 显示成功消息
+                    setTimeout(() => setSubmitSuccess(false), 3000); // 3秒后自动隐藏消息
                 })
                 .catch(error => {
                     console.error('Error submitting comment:', error);
+                })
+                .finally(() => {
+                    setSubmitSuccess(true);
+                    setTimeout(() => setSubmitSuccess(false), 3000);
                 });
         }
     };
@@ -82,6 +89,12 @@ function CommentBox(params: any) {
                 </Modal>
                 <Button positive onClick={handleSubmit}>Submit</Button>
             </Button.Group>
+            {submitSuccess && (
+                <Message positive>
+                    <Message.Header>Success</Message.Header>
+                    <p>Your comment has been submitted.</p>
+                </Message>
+            )}
         </Segment>
     );
 }
