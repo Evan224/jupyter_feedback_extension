@@ -2,9 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Segment, Header, Statistic,Tab } from 'semantic-ui-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, PointElement,LineElement } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,PointElement,LineElement);
+
+function getEmojiForRating(rating: number | string): string {
+  
+  switch (Number(rating)) {
+    case 1: return '😞'; // Or any other emoji you prefer
+    case 2: return '😐';
+    case 3: return '🙂';
+    case 4: return '😊';
+    case 5: return '😃';
+    default: return '';
+  }
+}
 
 interface RatingCounts {
     [key: number]: number;
@@ -47,8 +60,16 @@ interface RatingCounts {
 
 
 function RateResultView({ params}:{params:any}) {
+    const content = params?.notebookTracker?.currentWidget?.content;
     const [ratingData, setRatingData] = useState<any>(null);
     const [globalRatingData, setGlobalRatingData] = useState<any>(null);
+    content.activeCellChanged.connect(() => {
+      const mockData = generateMockRatingData();
+      setRatingData(mockData);
+      // Generate mock data for global view
+      const globalMockData = generateGlobalMockRatingData(10); // Assuming we have 10 cells
+      setGlobalRatingData(globalMockData);
+    });
 
     useEffect(() => {
         // Generate mock data for individual cell view
@@ -58,7 +79,7 @@ function RateResultView({ params}:{params:any}) {
         // Generate mock data for global view
         const globalMockData = generateGlobalMockRatingData(10); // Assuming we have 10 cells
         setGlobalRatingData(globalMockData);
-    }, []);
+    }, [content.activeCellIndex]);
 
     const panes = [
         { menuItem: 'Cell View', render: () => <Tab.Pane>{renderCellView(ratingData)}</Tab.Pane> },
@@ -83,15 +104,16 @@ function renderCellView(ratingData:any) {
     const { averageRating, medianRating, ratingDistribution } = ratingData;
     
     const chartData = {
-        labels: Object.keys(ratingDistribution),
-        datasets: [{
-            label: 'Rating Distribution',
-            data: Object.values(ratingDistribution),
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1,
-        }]
-    };
+      labels: Object.keys(ratingDistribution).map(rating => `${getEmojiForRating(rating)} (${rating})`),
+      datasets: [{
+          label: 'Rating Distribution',
+          data: Object.values(ratingDistribution),
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+      }]
+  };
+  
 
     return (
         <Segment>
@@ -111,68 +133,107 @@ function renderCellView(ratingData:any) {
     );
 }
 
-function renderGlobalView(globalRatingData:any) {
-    if (!globalRatingData) {
-      return <Segment loading />;
-    }
+// function renderGlobalView(globalRatingData:any) {
+//     if (!globalRatingData) {
+//       return <Segment loading />;
+//     }
 
-    const scaleDistributionCharts = Object.keys(globalRatingData.totalRatingsPerScale).map((scale:any) => {
-        const chartData = {
-            //@ts-ignore
-          labels: globalRatingData.ratingDistributions.map((_, index) => `Cell ${index + 1}`),
-          datasets: [
-            {
-              label: `Scale ${scale} Distribution`,
-              data: globalRatingData.ratingDistributions.map((dist:any) => dist[scale]),
-              backgroundColor: `rgba(${50 * scale}, ${100 + 30 * scale}, ${200 - 40 * scale}, 0.5)`,
-              borderColor: `rgba(${50 * scale}, ${100 + 30 * scale}, ${200 - 40 * scale}, 1)`,
-              borderWidth: 1
-            }
-          ]
-        };
-        return (
-          <div key={scale}>
-            <Bar data={chartData} />
-          </div>
-        );
-      });
+//     const scaleDistributionCharts = Object.keys(globalRatingData.totalRatingsPerScale).map((scale:any) => {
+//         const chartData = {
+//             //@ts-ignore
+//           labels: globalRatingData.ratingDistributions.map((_, index) => `Cell ${index + 1}`),
+//           datasets: [
+//             {
+//               label: `Scale ${scale} Distribution`,
+//               data: globalRatingData.ratingDistributions.map((dist:any) => dist[scale]),
+//               backgroundColor: `rgba(${50 * scale}, ${100 + 30 * scale}, ${200 - 40 * scale}, 0.5)`,
+//               borderColor: `rgba(${50 * scale}, ${100 + 30 * scale}, ${200 - 40 * scale}, 1)`,
+//               borderWidth: 1
+//             }
+//           ]
+//         };
+//         return (
+//           <div key={scale}>
+//             <Bar data={chartData} />
+//           </div>
+//         );
+//       });
   
-    const averageRatingChartData = {
-        //@ts-ignore
-      labels: globalRatingData.averageRatings.map((_, index) => `Cell ${index + 1}`),
-      datasets: [
-        {
-          label: 'Average Ratings per Cell',
-          data: globalRatingData.averageRatings,
-          backgroundColor: 'rgba(255, 99, 132, 0.5)',
-          borderColor: 'rgba(255, 99, 132, 1)',
-          borderWidth: 1
-        }
-      ]
-    };
+//     const averageRatingChartData = {
+//         //@ts-ignore
+//       labels: globalRatingData.averageRatings.map((_, index) => `Cell ${index + 1}`),
+//       datasets: [
+//         {
+//           label: 'Average Ratings per Cell',
+//           data: globalRatingData.averageRatings,
+//           backgroundColor: 'rgba(255, 99, 132, 0.5)',
+//           borderColor: 'rgba(255, 99, 132, 1)',
+//           borderWidth: 1
+//         }
+//       ]
+//     };
   
-    const totalRatingPerScaleChartData = {
-      labels: Object.keys(globalRatingData.totalRatingsPerScale),
-      datasets: [
-        {
-          label: 'Total Ratings per Scale',
-          data: Object.values(globalRatingData.totalRatingsPerScale),
-          backgroundColor: 'rgba(153, 102, 255, 0.5)',
-          borderColor: 'rgba(153, 102, 255, 1)',
-          borderWidth: 1
-        }
-      ]
-    };
+//     const totalRatingPerScaleChartData = {
+//       labels: Object.keys(globalRatingData.totalRatingsPerScale),
+//       datasets: [
+//         {
+//           label: 'Total Ratings per Scale',
+//           data: Object.values(globalRatingData.totalRatingsPerScale),
+//           backgroundColor: 'rgba(153, 102, 255, 0.5)',
+//           borderColor: 'rgba(153, 102, 255, 1)',
+//           borderWidth: 1
+//         }
+//       ]
+//     };
   
-    return (
-      <Segment>
-        <Header as='h3'>Global Rating Overview</Header>
-        <Bar data={averageRatingChartData} />
-        <Bar data={totalRatingPerScaleChartData} />
-        {scaleDistributionCharts}
-      </Segment>
-    );
+//     return (
+//       <Segment>
+//         <Header as='h3'>Global Rating Overview</Header>
+//         <Bar data={averageRatingChartData} />
+//         <Bar data={totalRatingPerScaleChartData} />
+//         {scaleDistributionCharts}
+//       </Segment>
+//     );
+//   }
+
+interface GlobalRatingData {
+  averageRatings: number[];
+  ratingDistributions: Record<string, number>[];
+}
+
+interface GroupedData {
+  averageRatings: string[];
+  ratingDistributions: Record<string, number>[];
+}
+
+function renderGlobalView(globalRatingData:any) {
+  if (!globalRatingData) {
+    return <Segment loading />;
   }
+
+  const averageRatings = globalRatingData.averageRatings.map(parseFloat);
+
+  const trendChartData = {
+    //@ts-ignore
+    labels: averageRatings.map((_, index) => `Cell ${index + 1}`),
+    datasets: [{
+      label: 'Average Ratings Trend',
+      data: averageRatings,
+      fill: false,
+      borderColor: 'rgb(75, 192, 192)',
+      tension: 0.1
+    }]
+  };
+
+  return (
+    <Segment>
+      <Header as='h3'>Global Rating Trend</Header>
+      <Line data={trendChartData} />
+    </Segment>
+  );
+}
+
+
 
 function generateGlobalMockRatingData(cellCount: number) {
     const globalRatingData:any = {

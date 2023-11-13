@@ -10,8 +10,10 @@ import { Button } from 'semantic-ui-react';
 import { Bar } from 'react-chartjs-2';
 import { Tab } from 'semantic-ui-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { NotebookTracker } from '@jupyterlab/notebook';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
 
 interface CommentData {
   start_line: number;
@@ -29,9 +31,18 @@ function generateMockCellComments(cellCount: number) {
 
 function TeacherView({ params }: any) {
   const activeCell= params?.notebookTracker?.activeCell;
+  const cellsArray = params.notebookTracker?.currentWidget?.content?.cellsArray;
+  const content = params?.notebookTracker?.currentWidget?.content;
   if(!activeCell?.model){
     return <></>
   }
+  const scrollToCell = (cellIndex: number) => {
+    const cell = cellsArray[cellIndex];
+    if (cell && cell.node) {
+      cell.node.scrollIntoView({ behavior: 'smooth',block:'center' });
+      content.activeCellIndex = cellIndex;
+    }
+  };
   const originalCodeDoc= activeCell?.editor?.doc?.text;
   const [comments, setComments] = useState<Comment[]>([]);
   const cell_type = params.cell_type || 'code';
@@ -143,7 +154,7 @@ function TeacherView({ params }: any) {
     setHoveredSelection(null);
   };
 
-  const mockCellComments = generateMockCellComments(10); // Assuming 10 cells for demonstration
+  const mockCellComments = generateMockCellComments(cellsArray.length); // Assuming 10 cells for demonstration
 
   // Preparing data for the bar chart
   const chartData = {
@@ -266,8 +277,8 @@ function TeacherView({ params }: any) {
               <Tab.Pane attached={false}>
       <Bar data={chartData} />
       <List divided relaxed>
-        {mockCellComments.map(cell => (
-          <List.Item key={cell.cellId}>
+        {mockCellComments.map((cell,index) => (
+          <List.Item key={cell.cellId} onClick={()=>scrollToCell(index)}>
             <List.Content>
               <List.Header>Cell {cell.cellId}</List.Header>
               <List.Description>

@@ -31,7 +31,14 @@ function QuestionnaireDisplay(params:any) {
   const [localData, setLocalData] = useState(generateMockQuestionnaireData());
   const [globalData, setGlobalData] = useState<any>(null);
 
+  const content = params?.notebookTracker?.currentWidget?.content;
+  content?.activeCellChanged?.connect(() => {
+    setLocalData(generateMockQuestionnaireData());
 
+    // Generate global data for all questionnaires
+    const globalMockData = generateGlobalMockQuestionnaireData(10); // Assuming we have 10 questionnaires
+    setGlobalData(globalMockData);
+  });
 
   useEffect(() => {
     // Generate local data (existing code)
@@ -99,37 +106,83 @@ function renderLocalView(localData: any) {
   );
 }
 
-function renderGlobalView(globalData: GlobalQuestionnaireData) {
-  if (!globalData || !globalData.cellSummaries) {
+// function renderGlobalView(globalData: GlobalQuestionnaireData) {
+//   if (!globalData || !globalData.cellSummaries) {
+//     return <Segment loading />;
+//   }
+
+//   return (
+//     <Segment>
+//       <Header as='h3'>Global Questionnaire Overview</Header>
+//       {globalData.cellSummaries.map((cellSummary, cellIndex) => (
+//         <div key={cellIndex}>
+//           <Header as='h4'>Cell {cellSummary.cellId}</Header>
+//           {cellSummary.questionSummaries.map((questionSummary, questionIndex) => {
+//             const chartData = {
+//               labels: Object.keys(questionSummary.answerCounts).map(key => `Answer ${key}`),
+//               datasets: [{
+//                 label: questionSummary.questionText,
+//                 data: Object.values(questionSummary.answerCounts),
+//                 backgroundColor: 'rgba(75, 192, 192, 0.5)',
+//                 borderColor: 'rgba(75, 192, 192, 1)',
+//                 borderWidth: 1,
+//               }]
+//             };
+//             return (
+//               <Bar key={questionIndex} data={chartData} />
+//             );
+//           })}
+//         </div>
+//       ))}
+//     </Segment>
+//   );
+// }
+
+function renderGlobalView(globalData: any) {
+  if (!globalData || globalData.cellSummaries.length === 0) {
     return <Segment loading />;
   }
 
+  // Aggregate data for all cells
+  const aggregatedData = globalData.cellSummaries.reduce((acc: any, cellSummary: any) => {
+    cellSummary.questionSummaries.forEach((questionSummary: any, questionIndex: number) => {
+      if (!acc[questionIndex]) {
+        acc[questionIndex] = {
+          questionText: questionSummary.questionText,
+          answerCounts: { ...questionSummary.answerCounts }
+        };
+      } else {
+        Object.keys(questionSummary.answerCounts).forEach(answerId => {
+          acc[questionIndex].answerCounts[answerId] += questionSummary.answerCounts[answerId];
+        });
+      }
+    });
+    return acc;
+  }, []);
+
   return (
     <Segment>
-      <Header as='h3'>Global Questionnaire Overview</Header>
-      {globalData.cellSummaries.map((cellSummary, cellIndex) => (
-        <div key={cellIndex}>
-          <Header as='h4'>Cell {cellSummary.cellId}</Header>
-          {cellSummary.questionSummaries.map((questionSummary, questionIndex) => {
-            const chartData = {
-              labels: Object.keys(questionSummary.answerCounts).map(key => `Answer ${key}`),
-              datasets: [{
-                label: questionSummary.questionText,
-                data: Object.values(questionSummary.answerCounts),
-                backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-              }]
-            };
-            return (
-              <Bar key={questionIndex} data={chartData} />
-            );
-          })}
-        </div>
-      ))}
+      <Header as='h3'>Aggregated Questionnaire Overview</Header>
+      {aggregatedData.map((questionSummary: any, questionIndex: number) => {
+        const chartData = {
+          labels: Object.keys(questionSummary.answerCounts).map(answerId => `Answer ${answerId}`),
+          datasets: [{
+            label: questionSummary.questionText,
+            data: Object.values(questionSummary.answerCounts),
+            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+          }]
+        };
+
+        return (
+          <Bar key={questionIndex} data={chartData} />
+        );
+      })}
     </Segment>
   );
 }
+
 
 
 

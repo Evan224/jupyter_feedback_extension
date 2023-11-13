@@ -32,7 +32,6 @@ export function showQuestionnaire(app: JupyterFrontEnd, target: 'file' | 'cell')
   // when the type is cell, we need to get the cell id and pass it to the widget
   const user_type=localStorage.getItem('user_type');
   let widget;
-  console.log(user_type)
   if(user_type==='teacher'){
     //@ts-ignore
     widget = new QuestionnaireDisplay({ target });
@@ -40,14 +39,28 @@ export function showQuestionnaire(app: JupyterFrontEnd, target: 'file' | 'cell')
     //@ts-ignore
     widget = new QuestionnaireWidget({ target });
   }
-  const existingWidget = Array.from(app.shell.widgets("right")).find((widget) =>
-  (widget as any)?.id === 'questionnaire-widget-right'
-) as any;
+  
 
-  if (existingWidget) {
-    app.shell.activateById(existingWidget.id);
-    return;
+  if(target==='cell'){
+    const existingWidget = Array.from(app.shell.widgets("right")).find((widget) =>
+    (widget as any)?.id === 'questionnaire-widget-right'
+    ) as any;
+    if (existingWidget) {
+      app.shell.activateById(existingWidget.id);
+      return;
+    }
+  }else if(target==='file'){
+    const existingWidget = Array.from(app.shell.widgets("main")).find((widget) =>
+    (widget as any)?.id === 'questionnaire-widget-main'
+    ) as any;
+    if (existingWidget) {
+      app.shell.activateById(existingWidget.id);
+      return;
+    }
   }
+
+
+
   widget.title.icon = reactIcon;
   if (target === 'file') {
     widget.id = 'questionnaire-widget-main';

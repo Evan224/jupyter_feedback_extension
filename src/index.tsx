@@ -63,14 +63,17 @@ const extension: JupyterFrontEndPlugin<void> = {
         }
       }
     });
+
     notebookTracker.activeCellChanged.connect(() => {
       const tooltip = document.getElementById('my-tooltip');
       if (tooltip) {
         tooltip.style.display = 'none';  // 隐藏tooltip而不是移除它
       }
     });
+
     notebookTracker.activeCellChanged.connect(() => {
       updateSidebarWidget(app, notebookTracker);
+      // console.log(notebookTracker.currentWidget,'-----------------------');
     });
 
     notebookTracker.activeCellChanged.connect(() => {
