@@ -14,6 +14,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { NotebookTracker } from '@jupyterlab/notebook';
 //@ts-ignore
 import mockData from './mockData.json';
+import { set } from 'mongoose';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -44,24 +45,33 @@ function TeacherView({ params }: any) {
   const itemsPerPage = 3;
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('');
+  const [globalWordChoice, setGlobalWordChoice] = useState('');
+  const [activeTabIndex, setActiveTabIndex] = useState<number>(0); // 假设第一个标签页默认激活
   const activeCellIndex = params?.notebookTracker?.currentWidget?.content.activeCellIndex;
-
   useEffect(() => {
     const aggregationResult = aggregateComments(comments, cell_type, filter,searchQuery,activeCellIndex); // 更新调用
     setAggregatedData(aggregationResult);
   }, [comments,searchQuery,filter,cell_type,activeCellIndex]);
+
 
   const scrollToCell = (cellIndex: number) => {
     const cell = cellsArray[cellIndex];
     if (cell && cell.node) {
       cell.node.scrollIntoView({ behavior: 'smooth',block:'center' });
       content.activeCellIndex = cellIndex;
+      setActiveTabIndex(0);
     }
     
   };
   const CommentsBarChart = ({ data }: { data: CommentData[] }) => {
     const chartData = {
-      labels: data.map(item => `Line ${item.start_line} to ${item.end_line}`),
+      labels: data.map(item => {
+        if (item.start_line === item.end_line) {
+          return `Line ${item.start_line}`; 
+        } else {
+          return `Line ${item.start_line} to ${item.end_line}`; 
+        }
+      }),
       datasets: [
         {
           label: 'Number of Comments',
@@ -72,8 +82,24 @@ function TeacherView({ params }: any) {
         }
       ]
     };
+    const options = {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            // 确保Y轴只显示整数
+            stepSize: 1,
+            callback: function(value:any, index:any, values:any) {
+              if (Math.floor(value) === value) {
+                return value;
+              }
+            },
+          },
+        },
+      },
+    };
   
-    return <Bar data={chartData} />;
+    return <Bar data={chartData} options={options} />;
   };
   const handleSearchChange = (e:any) => {
     setSearchQuery(e.target.value);
@@ -132,7 +158,7 @@ function TeacherView({ params }: any) {
   };
 
   // const mockCellComments = generateMockCellComments(cellsArray.length);
-  const globalCellData=countCommentsPerCell(mockData,mockData.length);
+  const globalCellData=countCommentsPerCell(mockData,mockData.length,globalWordChoice);
 
   // Preparing data for the bar chart
   const chartData = {
@@ -146,6 +172,10 @@ function TeacherView({ params }: any) {
         borderWidth: 1,
       },
     ],
+  };
+
+  const handleResetGlobalFilter = () => {
+    setGlobalWordChoice(''); // 清空全局词汇选择
   };
 
   function CommentsWordCloud({ comments }: { comments: Comment[] }) {
@@ -164,18 +194,18 @@ function TeacherView({ params }: any) {
       fontFamily: "impact",
       fontStyle: "normal",
       fontWeight: "normal",
+      fontSizes: [50, 60] as [number, number],
       padding: 1,
       maxWords: 10,
       transitionDuration: 1000,
-      fontSize: [10, 60] as [number, number]
     };
   
     return (
       <div style={{ width: "100%", height: "200px" }}>
-        <ReactWordcloud words={words} options={options} 
+        <ReactWordcloud words={words} options={options}  
         callbacks={{
           getWordTooltip:(words)=>`${words.text} (${words.value})`,
-          onWordClick:(words)=>{setFilter(words.text)}
+          onWordClick:(word)=>{setGlobalWordChoice(word.text)}
         }}
         />
       </div>
@@ -211,7 +241,9 @@ function TeacherView({ params }: any) {
       >
         {codeString}
       </SyntaxHighlighter>
-      <CommentsBarChart data={aggregatedData} />
+      <div style={{ width: '50%', height: 'auto' }}> {/* 或者其他你希望的尺寸 */}
+  <CommentsBarChart data={aggregatedData} />
+</div>
       <Header as='h2'>Comments</Header>
       <List divided relaxed>
         {aggregatedData.map((data, index) => (
@@ -260,24 +292,27 @@ function TeacherView({ params }: any) {
     {
       menuItem: 'Global View',
       render: () => (
-              <Tab.Pane attached={false}>
-      <Bar data={chartData} />
-      <CommentsWordCloud comments={comments} />
-      <List divided relaxed>
-        {globalCellData.map((cell,index) => (
-          <List.Item key={cell} onClick={()=>scrollToCell(index)}>
-            <List.Content>
-              <List.Header>Cell {index}</List.Header>
-              <List.Description>
-                Comments: {cell}
-              </List.Description>
-            </List.Content>
-          </List.Item>
-        ))}
-      </List>
-    </Tab.Pane>
+        <Tab.Pane attached={false}>
+          <Bar data={chartData} />
+          <Button onClick={handleResetGlobalFilter}>Reset Filter</Button>
+          <CommentsWordCloud comments={comments} />
+          {/* 这里添加评论列表 */}
+          <List divided relaxed>
+            {globalCellData.map((cell,index) => (
+              <List.Item key={index} onClick={()=>scrollToCell(index)}>
+                <List.Content>
+                  <List.Header>Cell {index}</List.Header>
+                  <List.Description>
+                    Comments: {cell}
+                  </List.Description>
+                </List.Content>
+              </List.Item>
+            ))}
+          </List>
+        </Tab.Pane>
       ),
     },
+    
   ];
 
   return (

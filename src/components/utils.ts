@@ -150,23 +150,29 @@ function generateSummary(comments: any) {
   return comments[0].substr(0, 30) + (comments[0].length > 30 ? "..." : "");
 }
 
-function countCommentsPerCell(comments: Comment[], maxCellNumber: number) {
+function countCommentsPerCell(comments: Comment[], maxCellNumber: number, filter: string) {
   const cellCommentCounts: Array<number> = [];
 
-  // 遍历每个cell number从0到最大cell number
+  // 初始化每个cell的评论计数为0
   for (let i = 0; i <= maxCellNumber; i++) {
     cellCommentCounts[i] = 0;
   }
 
   // 遍历所有评论
   comments.forEach((comment) => {
-    const cellNumber = comment.cell_number;
-    // 检查cell number是否在我们的范围内
-    cellCommentCounts[cellNumber]++;
+    // 如果评论包含filter指定的文本，则计数
+    if (comment.comment.toLowerCase().includes(filter.toLowerCase())) {
+      const cellNumber = comment.cell_number;
+      // 确保cell number在范围内
+      if (cellNumber >= 0 && cellNumber <= maxCellNumber) {
+        cellCommentCounts[cellNumber]++;
+      }
+    }
   });
 
   return cellCommentCounts;
 }
+
 
 function generateWordFrequency(comments: Comment[]) {
   const wordFrequencies: any = {};
