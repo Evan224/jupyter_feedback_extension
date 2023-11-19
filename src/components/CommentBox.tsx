@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 import { JupyterFrontEnd } from '@jupyterlab/application';
@@ -6,16 +6,15 @@ import { INotebookTracker } from '@jupyterlab/notebook';
 import { Button, TextArea, Segment, Modal, Message } from 'semantic-ui-react';
 
 function CommentBox(params: any) {
+    console.log(params?.params?.selected_text,'----------------')
     const { app, notebookTracker }: { app: JupyterFrontEnd; notebookTracker: INotebookTracker } = params.params;
     if (!app) {
         return <Segment placeholder loading />;
     }
     const [submitSuccess, setSubmitSuccess] = useState(false); // 新增状态，用于追踪提交状态
-
     const [comment, setComment] = useState('');
     const [showEmojiPicker, setShowEmojiPicker]= useState(false);
     const position = notebookTracker?.activeCell?.editor?.getSelection() as any;
-    const selected_text = window.getSelection()?.toString();
     const user_id = localStorage.getItem("user_id");
     let start = { line: 0, column: 0 };
     let end = { line: 0, column: 0 };
@@ -33,6 +32,7 @@ function CommentBox(params: any) {
 
     const handleSubmit = () => {
         if (comment.trim()) {
+            console.log(comment, start, end, user_id, params?.params?.selected_text, notebookTracker?.activeCell?.dataset?.windowedListIndex)
             fetch('http://localhost:3000/comments', {
                 method: 'POST',
                 headers: {
@@ -45,7 +45,7 @@ function CommentBox(params: any) {
                     start_column: start.column,
                     end_column: end.column,
                     user_id: user_id,
-                    selected_text: selected_text,
+                    selected_text: params?.params?.selected_text,
                     cell_number: notebookTracker?.activeCell?.dataset?.windowedListIndex,
                 }),
             })
@@ -71,7 +71,13 @@ function CommentBox(params: any) {
     };
 
     return (
-        <Segment>
+        <Segment style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 20px)' }}>
+            {params?.params?.selected_text && (
+                <Message>
+                    <Message.Header>Selected Text</Message.Header>
+                    <p>{params?.params?.selected_text}</p>
+                </Message>
+            )}
             <TextArea
                 value={comment}
                 onChange={(e, { value }) => setComment(value as string)}

@@ -32,6 +32,7 @@ export const createOrActivateWidget = (
   widgetId: string,
   app: JupyterFrontEnd,
   notebookTracker: INotebookTracker,
+  selected_text?: string,
 ) => {
   const user_type = localStorage.getItem("user_type");
   const existingWidget = Array.from(app.shell.widgets("right")).find((widget) =>
@@ -40,6 +41,11 @@ export const createOrActivateWidget = (
 
   if (existingWidget) {
     app.shell.activateById(existingWidget.id);
+    existingWidget.updateParams({
+      app: app,
+      notebookTracker: notebookTracker,
+      selected_text: selected_text,
+    });
     return;
   }
   let widget;
@@ -48,6 +54,7 @@ export const createOrActivateWidget = (
       widget = new CommentBoxWidget({
         app: app,
         notebookTracker: notebookTracker,
+        selected_text: selected_text,
       });
     } else {
       widget = new CommentBoxDisplay({
@@ -90,6 +97,7 @@ export function handleTooltipClicks(
   event: MouseEvent,
   app: JupyterFrontEnd,
   notebookTracker: INotebookTracker,
+  selected_text?: string,
 ) {
   const target = event.target as HTMLElement;
   const iconWrapper = target.closest(".icon-wrapper"); // 使用closest查找最近的匹配元素
@@ -117,6 +125,7 @@ export function handleTooltipClicks(
       widgetId,
       app,
       notebookTracker,
+      selected_text,
     );
   }
 }
@@ -158,6 +167,7 @@ export function showTooltip(
   event: MouseEvent,
   app: JupyterFrontEnd,
   notebookTracker: INotebookTracker,
+  selected_text?: string,
 ) {
   const coordinates = getSelectionCoordinates();
   const existingTooltip = document.getElementById("my-tooltip");
@@ -195,7 +205,7 @@ export function showTooltip(
   // Add event listener for tooltip clicks
   tooltip.addEventListener(
     "click",
-    (e) => handleTooltipClicks(e, app, notebookTracker),
+    (e) => handleTooltipClicks(e, app, notebookTracker, selected_text),
   );
 
   document.body.appendChild(tooltip);

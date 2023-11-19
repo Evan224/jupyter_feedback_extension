@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import { docco } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { Comment, TextSelection, aggregateComments, generateMockComments,getColorForLineCount,generateSummary} from "./utils";
+import { Comment, TextSelection, aggregateComments, generateMockComments,getColorForLineCount,generateSummary,countCommentsPerCell,generateWordFrequency} from "./utils";
 import { Segment, Header, List, Accordion, Pagination } from 'semantic-ui-react';
 import { Input, Dropdown } from 'semantic-ui-react';
 import { exportCommentsToCSV,exportCommentsToPDF } from './utils';
 import { Button } from 'semantic-ui-react';
 import { Bar } from 'react-chartjs-2';
 import { Tab } from 'semantic-ui-react';
+import ReactWordcloud from 'react-wordcloud';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { NotebookTracker } from '@jupyterlab/notebook';
+//@ts-ignore
+import mockData from './mockData.json';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -20,14 +23,6 @@ interface CommentData {
   end_line: number;
   count: number;
 }
-
-function generateMockCellComments(cellCount: number) {
-  return Array.from({ length: cellCount }, (_, index) => ({
-    cellId: index + 1,
-    commentCount: Math.floor(Math.random() * 20), // Random comment count for each cell
-  }));
-}
-
 
 function TeacherView({ params }: any) {
   const activeCell= params?.notebookTracker?.activeCell;
@@ -43,14 +38,18 @@ function TeacherView({ params }: any) {
   const codeDoc = originalCodeDoc;
   const [aggregatedData, setAggregatedData] = useState<TextSelection[]>([]);
   const [hoveredSelection, setHoveredSelection] = useState<TextSelection | null>(null);
-  // const [codeDoc, setCodeDoc] = useState<string[]>([]);
-  // const [cell_type, setCellType] = useState<"code" | "markdown">("code");
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const [activePage, setActivePage] = useState<number>(1);
   const [clickedSelection, setClickedSelection] = useState<TextSelection | null>(null);
   const itemsPerPage = 3;
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('');
+  const activeCellIndex = params?.notebookTracker?.currentWidget?.content.activeCellIndex;
+
+  useEffect(() => {
+    const aggregationResult = aggregateComments(comments, cell_type, filter,searchQuery,activeCellIndex); // 更新调用
+    setAggregatedData(aggregationResult);
+  }, [comments,searchQuery,filter,cell_type,activeCellIndex]);
 
   const scrollToCell = (cellIndex: number) => {
     const cell = cellsArray[cellIndex];
@@ -80,36 +79,12 @@ function TeacherView({ params }: any) {
     setSearchQuery(e.target.value);
   };
 
-  const handleFilterChange = (e:any) => {
-    setFilter(e.target.value);
-  };
-
-
-  const filterOptions = [
-    { key: 'all', text: 'All', value: 'all' },
-    { key: '1-5', text: '1-5 Comments', value: '1-5' },
-    { key: '6-10', text: '6-10 Comments', value: '6-10' },
-    { key: '10+', text: 'More than 10 Comments', value: '10+' },
-  ];
-
 
   const filteredComments = comments.filter(comment => 
     comment.comment.toLowerCase().includes(searchQuery.toLowerCase()) ||
     comment.user_id.toLowerCase().includes(searchQuery.toLowerCase())
   ); 
 
-  const filteredAggregatedData = aggregatedData.filter(data => {
-    switch (filter) {
-      case '1-5':
-        return data.count >= 1 && data.count <= 5;
-      case '6-10':
-        return data.count >= 6 && data.count <= 10;
-      case '10+':
-        return data.count > 10;
-      default:
-        return true;
-    }
-  });
 
   const handleClick = (e: any, titleProps: any, selection: TextSelection) => {
     const { index } = titleProps;
@@ -156,15 +131,16 @@ function TeacherView({ params }: any) {
     setHoveredSelection(null);
   };
 
-  const mockCellComments = generateMockCellComments(cellsArray.length); // Assuming 10 cells for demonstration
+  // const mockCellComments = generateMockCellComments(cellsArray.length);
+  const globalCellData=countCommentsPerCell(mockData,mockData.length);
 
   // Preparing data for the bar chart
   const chartData = {
-    labels: mockCellComments.map(cell => `Cell ${cell.cellId}`),
+    labels: globalCellData.map((cell,index) => `Cell ${index}`),
     datasets: [
       {
         label: 'Number of Comments per Cell',
-        data: mockCellComments.map(cell => cell.commentCount),
+        data: globalCellData,
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
         borderColor: 'rgba(75, 192, 192, 1)',
         borderWidth: 1,
@@ -172,32 +148,46 @@ function TeacherView({ params }: any) {
     ],
   };
 
-  const globalViewPane = (
-    <Tab.Pane attached={false}>
-      <Bar data={chartData} />
-      <List divided relaxed>
-        {mockCellComments.map(cell => (
-          <List.Item key={cell.cellId}>
-            <List.Content>
-              <List.Header>Cell {cell.cellId}</List.Header>
-              <List.Description>
-                Comments: {cell.commentCount}
-              </List.Description>
-            </List.Content>
-          </List.Item>
-        ))}
-      </List>
-    </Tab.Pane>
-  );
+  function CommentsWordCloud({ comments }: { comments: Comment[] }) {
+    const wordFrequencies = generateWordFrequency(comments);
+    let words = Object.keys(wordFrequencies).map(key => {
+      return { text: key, value: wordFrequencies[key] };
+    });
+  
+    // 对单词按频率排序并选取前10个
+    words = words.sort((a, b) => b.value - a.value).slice(0, 10);
+  
+    // 设置词云样式和布局参数
+    const options = {
+      rotations: 2,
+      rotationAngles: [-90, 0] as [number, number],
+      fontFamily: "impact",
+      fontStyle: "normal",
+      fontWeight: "normal",
+      padding: 1,
+      maxWords: 10,
+      transitionDuration: 1000,
+      fontSize: [10, 60] as [number, number]
+    };
+  
+    return (
+      <div style={{ width: "100%", height: "200px" }}>
+        <ReactWordcloud words={words} options={options} 
+        callbacks={{
+          getWordTooltip:(words)=>`${words.text} (${words.value})`,
+          onWordClick:(words)=>{setFilter(words.text)}
+        }}
+        />
+      </div>
+    );
+  }
+  
 
   const codeString = codeDoc?.join('\n');
 
   useEffect(() => {
-    const mockData = generateMockComments();
-    setComments(mockData.comments);
-    const aggregationResult = aggregateComments(mockData.comments, cell_type, filter); // 更新调用
-    setAggregatedData(aggregationResult);
-  }, [cell_type, codeDoc, searchQuery, filter]); 
+    setComments(mockData);
+  }, [cell_type, codeDoc]); 
 
   const panes = [
     {
@@ -211,12 +201,6 @@ function TeacherView({ params }: any) {
           onChange={handleSearchChange} 
           style={{ marginRight: '10px' }}
         />
-        {/* <Dropdown 
-          placeholder='Filter' 
-          selection 
-          options={filterOptions} 
-          onChange={handleFilterChange}
-        /> */}
       </div>
       <SyntaxHighlighter
         language="javascript"
@@ -278,13 +262,14 @@ function TeacherView({ params }: any) {
       render: () => (
               <Tab.Pane attached={false}>
       <Bar data={chartData} />
+      <CommentsWordCloud comments={comments} />
       <List divided relaxed>
-        {mockCellComments.map((cell,index) => (
-          <List.Item key={cell.cellId} onClick={()=>scrollToCell(index)}>
+        {globalCellData.map((cell,index) => (
+          <List.Item key={cell} onClick={()=>scrollToCell(index)}>
             <List.Content>
-              <List.Header>Cell {cell.cellId}</List.Header>
+              <List.Header>Cell {index}</List.Header>
               <List.Description>
-                Comments: {cell.commentCount}
+                Comments: {cell}
               </List.Description>
             </List.Content>
           </List.Item>

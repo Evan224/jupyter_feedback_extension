@@ -33,7 +33,7 @@ const extension: JupyterFrontEndPlugin<void> = {
   requires: [INotebookTracker],
   activate: (app: JupyterFrontEnd, notebookTracker: INotebookTracker) => {
     //TODO: currently mannually set the userType
-    localStorage.setItem('user_type', 'student');
+    localStorage.setItem('user_type', 'teacher');
     checkAndSendUser();
     addToolbarButton(app, notebookTracker);
     eventTracker.registerJupyterLabEventListeners(notebookTracker);
@@ -45,18 +45,22 @@ const extension: JupyterFrontEndPlugin<void> = {
       }
       const activeCell = notebookTracker.activeCell;
       if (!activeCell?.model){return}
-
       if(activeCell.model?.type==='code'&&!activeCell.node.contains(document.activeElement)){
-        //当cell失去焦点，但是本身又存在的时候，tooltip消失
         const tooltip = document.getElementById('my-tooltip');
         if (tooltip) {
-          tooltip.style.display = 'none';  // 隐藏tooltip而不是移除它
+          tooltip.style.display = 'none';  
         }
         return;
       }
+      // if(selectedText&&selectedText.trim()!==''){
+      //   localStorage.setItem('selected_text',selectedText || '');
+      // }
       if (activeCell.model?.type && activeCell.model?.type === 'code') {
         const codeMirrorEditor: any = activeCell?.editor;
         const selectedText = codeMirrorEditor?.getSelection();
+        const selected_text = window.getSelection()?.toString();
+        console.log(selected_text,'selectedText,-----------------------------------')
+        // console.log(window.getSelection()?.toString(),'window.getSelection()-----------------------------------')
         if (selectedText && (selectedText.start.line !== selectedText.end.line || selectedText.start.column !== selectedText.end.column)) {
           eventTracker.sendEvent('code-selection', {
             cellId: activeCell.model.id,
@@ -64,7 +68,7 @@ const extension: JupyterFrontEndPlugin<void> = {
             currentListOrder:activeCell?.dataset?.windowedListIndex,
             currentPromptNumber: (activeCell as any).prompt,
           });
-          showTooltip(event,app,notebookTracker);
+          showTooltip(event,app,notebookTracker,selected_text);
         }
       } else if (activeCell.model?.type === "markdown") {
         const selectedText = window.getSelection()?.toString();
@@ -76,7 +80,7 @@ const extension: JupyterFrontEndPlugin<void> = {
             // @ts-ignore
             currentPromptNumber: activeCell.prompt,
           });
-          showTooltip(event,app,notebookTracker);
+          showTooltip(event,app,notebookTracker,selectedText);
         }
       }
     });

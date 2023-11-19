@@ -24,10 +24,17 @@ function aggregateComments(
   comments: Comment[],
   cell_type: "code" | "markdown",
   filter: string, // 添加filter参数
+  search_query: string,
+  activeCellIndex: number,
 ): TextSelection[] {
   const textSelections: TextSelection[] = [];
+  const filtered_comments = comments.filter((comment) => {
+    return comment.comment.toLowerCase().trim().includes(
+      search_query.toLowerCase().trim(),
+    ) && comment.cell_number === activeCellIndex;
+  });
 
-  comments.forEach((comment) => {
+  filtered_comments.forEach((comment) => {
     const overlappingSelection = textSelections.find((selection) =>
       cell_type === "code"
         ? !(
@@ -143,13 +150,52 @@ function generateSummary(comments: any) {
   return comments[0].substr(0, 30) + (comments[0].length > 30 ? "..." : "");
 }
 
+function countCommentsPerCell(comments: Comment[], maxCellNumber: number) {
+  const cellCommentCounts: Array<number> = [];
+
+  // 遍历每个cell number从0到最大cell number
+  for (let i = 0; i <= maxCellNumber; i++) {
+    cellCommentCounts[i] = 0;
+  }
+
+  // 遍历所有评论
+  comments.forEach((comment) => {
+    const cellNumber = comment.cell_number;
+    // 检查cell number是否在我们的范围内
+    cellCommentCounts[cellNumber]++;
+  });
+
+  return cellCommentCounts;
+}
+
+function generateWordFrequency(comments: Comment[]) {
+  const wordFrequencies: any = {};
+
+  comments.forEach((comment) => {
+    const words = comment.comment.match(/\w+/g);
+    if (words) {
+      words.forEach((word) => {
+        const lowerCaseWord = word.toLowerCase();
+        if (!wordFrequencies[lowerCaseWord]) {
+          wordFrequencies[lowerCaseWord] = 0;
+        }
+        wordFrequencies[lowerCaseWord] += 1;
+      });
+    }
+  });
+
+  return wordFrequencies;
+}
+
 export {
   aggregateComments,
   Comment,
+  countCommentsPerCell,
   exportCommentsToCSV,
   exportCommentsToPDF,
   generateMockComments,
   generateSummary,
+  generateWordFrequency,
   getColorForLineCount,
   TextSelection,
 };
