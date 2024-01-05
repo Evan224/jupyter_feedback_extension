@@ -6,6 +6,7 @@ import { INotebookModel, INotebookTracker} from '@jupyterlab/notebook';
 import { EventTracker } from './utils/EventTracker';
 import { checkAndSendUser } from './utils/initUser';
 import { showTooltip, createOrActivateWidget} from './utils';
+import {showRateBox} from './components/RateBox';
 import { updateSidebarWidget } from './utils';
 import { ToolbarButton } from '@jupyterlab/apputils';
 import { showQuestionnaire } from './components/QuestionaireWidget';
@@ -33,7 +34,7 @@ const extension: JupyterFrontEndPlugin<void> = {
   requires: [INotebookTracker],
   activate: (app: JupyterFrontEnd, notebookTracker: INotebookTracker) => {
     //TODO: currently mannually set the userType
-    localStorage.setItem('user_type', 'teacher');
+    localStorage.setItem('user_type', 'student');
     checkAndSendUser();
     addToolbarButton(app, notebookTracker);
     eventTracker.registerJupyterLabEventListeners(notebookTracker);
@@ -59,7 +60,6 @@ const extension: JupyterFrontEndPlugin<void> = {
         const codeMirrorEditor: any = activeCell?.editor;
         const selectedText = codeMirrorEditor?.getSelection();
         const selected_text = window.getSelection()?.toString();
-        console.log(selected_text,'selectedText,-----------------------------------')
         // console.log(window.getSelection()?.toString(),'window.getSelection()-----------------------------------')
         if (selectedText && (selectedText.start.line !== selectedText.end.line || selectedText.start.column !== selectedText.end.column)) {
           eventTracker.sendEvent('code-selection', {
@@ -163,6 +163,41 @@ const extension: JupyterFrontEndPlugin<void> = {
         activeCell.node.insertBefore(button2, button1.nextSibling); // 将第二个按钮添加在第一个按钮之后
       }
     });
+
+    notebookTracker.activeCellChanged.connect(() => {
+      const user_type = localStorage.getItem('user_type');
+      if (user_type === 'teacher') {
+        return;
+      }
+      const activeCell: any = notebookTracker.activeCell;
+      if (!activeCell) {
+        const button = document.getElementById('ratebox-button-cell');
+        if (button) {
+          button.remove();
+        }
+        return;
+      }
+    
+      let button = document.getElementById('ratebox-button-cell');
+      if (button) {
+        button.remove();
+      }
+    
+      button = document.createElement('button');
+      button.className = 'my-button';
+      button.innerText = 'Rate Box';
+      button.id = 'ratebox-button-cell';
+      button.onclick = () => {
+        showRateBox(app);
+      };
+    
+      activeCell.node.appendChild(button);
+    });
+
+    // update all the sidebar widgets
+    // notebookTracker.activeCellChanged.connect(() => {
+    //   updateSidebarWidget(app, notebookTracker);
+    // });
     
     
 

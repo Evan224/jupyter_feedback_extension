@@ -1,4 +1,4 @@
-import { useState,useEffect } from 'react';
+import { useState,useEffect,useRef } from 'react';
 import Picker from 'emoji-picker-react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 import { JupyterFrontEnd } from '@jupyterlab/application';
@@ -6,7 +6,6 @@ import { INotebookTracker } from '@jupyterlab/notebook';
 import { Button, TextArea, Segment, Modal, Message } from 'semantic-ui-react';
 
 function CommentBox(params: any) {
-    console.log(params?.params?.selected_text,'----------------')
     const { app, notebookTracker }: { app: JupyterFrontEnd; notebookTracker: INotebookTracker } = params.params;
     if (!app) {
         return <Segment placeholder loading />;
@@ -18,11 +17,19 @@ function CommentBox(params: any) {
     const user_id = localStorage.getItem("user_id");
     let start = { line: 0, column: 0 };
     let end = { line: 0, column: 0 };
+    const commentBoxRef = useRef<any>(null); // 创建一个ref
 
     if (position) {
         start = position.start;
         end = position.end;
     }
+
+    useEffect(() => {
+        // 当组件更新时，聚焦到评论框
+        if (commentBoxRef.current) {
+            commentBoxRef.current.focus();
+        }
+    });
 
     const handleEmojiClick = (emojiObject: any) => {
         setComment(prevComment => prevComment + emojiObject.emoji);
@@ -73,12 +80,13 @@ function CommentBox(params: any) {
     return (
         <Segment style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 20px)' }}>
             {params?.params?.selected_text && (
-                <Message>
+                <Message style={{ overflow: 'auto', maxHeight: '100px' }}>
                     <Message.Header>Selected Text</Message.Header>
                     <p>{params?.params?.selected_text}</p>
                 </Message>
             )}
             <TextArea
+                ref={commentBoxRef}
                 value={comment}
                 onChange={(e, { value }) => setComment(value as string)}
                 placeholder="Write a comment..."

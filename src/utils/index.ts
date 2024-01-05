@@ -22,10 +22,11 @@ import RateResultViewWidget from "../components/RateResultView";
 
 const WIDGET_IDS = {
   COMMENT_BOX: "comment-box-widget",
-  QUESTIONNAIRE: "questionnaire-widget",
-  CHATBOT: "chatbot-widget",
-  MY_REACT: "my-react-widget",
+  QUESTIONNAIRE: "questionnaire-widget-right",
+  RATE_BOX: "ratebox-widget-right",
+  // MY_REACT: "my-react-widget",
 };
+
 
 export const createOrActivateWidget = (
   widgetIcon: any,
@@ -74,13 +75,6 @@ export const createOrActivateWidget = (
         notebookTracker: notebookTracker,
       });
     }
-  } else if (widgetId === WIDGET_IDS.CHATBOT) {
-    widget = new ChatBotWidget({});
-  } else if (widgetId === WIDGET_IDS.MY_REACT) {
-    widget = new CommentBoxDisplay({
-      app: app,
-      notebookTracker: notebookTracker,
-    });
   }
 
   if (!widget) {
@@ -111,13 +105,13 @@ export function handleTooltipClicks(
     widgetId = WIDGET_IDS.COMMENT_BOX;
   } else if (iconWrapper.matches("#close-icon")) {
     widgetIcon = closeIcon;
-    widgetId = WIDGET_IDS.CHATBOT;
+    // widgetId = WIDGET_IDS.CHATBOT;
   } else if (iconWrapper.matches("#notebook-icon")) {
     widgetIcon = notebookIcon;
     widgetId = WIDGET_IDS.QUESTIONNAIRE;
   } else if (iconWrapper.matches("#react-icon")) {
     widgetIcon = reactIcon;
-    widgetId = WIDGET_IDS.MY_REACT;
+    // widgetId = WIDGET_IDS.MY_REACT;
   }
   if (widgetId && widgetIcon) {
     createOrActivateWidget(
@@ -199,7 +193,7 @@ export function showTooltip(
   // Append tooltip icons
   tooltip.appendChild(createTooltipIcon(addIcon, "add-icon"));
   // tooltip.appendChild(createTooltipIcon(closeIcon, "close-icon"));
-  tooltip.appendChild(createTooltipIcon(notebookIcon, "notebook-icon"));
+  // tooltip.appendChild(createTooltipIcon(notebookIcon, "notebook-icon"));
   // tooltip.appendChild(createTooltipIcon(reactIcon, "react-icon"));
 
   // Add event listener for tooltip clicks
@@ -233,21 +227,27 @@ export function updateSidebarWidget(
   notebookTracker: INotebookTracker,
 ) {
   const activeCell = notebookTracker.activeCell;
+  console.log("activeCell", activeCell,'------------isupdateing');
   if (activeCell) {
     const codeMirrorEditor = activeCell.editor;
-    const selectedText = codeMirrorEditor?.getSelection();
+    // const selectedText = codeMirrorEditor?.getSelection();
     // 你可以根据需要添加更多的信息
     const params = {
       app: app,
       notebookTracker: notebookTracker,
     };
     // 更新widget的参数
-    const widgetId = WIDGET_IDS.COMMENT_BOX; // 或其他需要更新的 widget ID
-    const existingWidget = Array.from(app.shell.widgets("right")).find(
-      (widget) => (widget as any)?.id === widgetId,
-    ) as any;
-    if (existingWidget) {
-      existingWidget?.updateParams(params);
+    // const widgetId = WIDGET_IDS.COMMENT_BOX; // 或其他需要更新的 widget ID
+    const existingWidgets = Array.from(app.shell.widgets("right")).filter(
+      (widget) => widget.id === WIDGET_IDS.COMMENT_BOX|| widget.id === WIDGET_IDS.QUESTIONNAIRE|| widget.id === WIDGET_IDS.RATE_BOX,
+    );
+    console.log("existingWidgets", existingWidgets)
+    if (existingWidgets.length) {
+      existingWidgets.forEach(existingWidget => {
+        //@ts-ignore
+        existingWidget?.updateParams(params);
+      })
+      // existingWidget?.updateParams(params);
     }
   }
 }
