@@ -127,3 +127,20 @@ dmypy.json
 GA.md
 
 .env
+
+# .gitignore
+
+# Node modules
+./server/node_modules/
+
+# Environment variables
+./server/.env
+
+# Logs
+./server/npm-debug.log*
+./server/yarn-debug.log*
+./server/yarn-error.log*
+
+# Editor directories
+./server/.idea/
+./server/.vscode/
